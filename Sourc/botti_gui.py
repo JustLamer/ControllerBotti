@@ -134,6 +134,9 @@ def update_graph(nome, ax, canvas, time_range, tick_interval):
         ax.axhline(entry['min_temp'], color='blue', linestyle='--', label='Min Temp')
         ax.axhline(entry['max_temp'], color='red', linestyle='--', label='Max Temp')
         vh = valve_history[nome]
+        # Filtra storico valvole in base all'intervallo selezionato
+        if time_range != 'Tutto':
+            vh = [(t,s) for t,s in vh if t >= cutoff]
         open_times = [t for t,s in vh if s == 'Aperta']
         close_times = [t for t,s in vh if s == 'Chiusa']
         ax.scatter(open_times, [entry['max_temp']]*len(open_times), marker='v', color='orange', label='Valve Open')
