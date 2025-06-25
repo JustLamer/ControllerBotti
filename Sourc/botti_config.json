@@ -1,0 +1,29 @@
+{
+  "botti_data": {
+    "Botte 1": {
+      "temperatura": 30.7,
+      "valvola": "Chiusa",
+      "min_temp": 29.1,
+      "max_temp": 32.0,
+      "forced": "Chiusa"
+    },
+    "Botte 2": {
+      "temperatura": 20.1,
+      "valvola": "Chiusa",
+      "min_temp": 21.0,
+      "max_temp": 21.8,
+      "forced": null
+    },
+    "Botte 3": {
+      "temperatura": 23.2,
+      "valvola": "Aperta",
+      "min_temp": 22.5,
+      "max_temp": 22.8,
+      "forced": "Aperta"
+    }
+  },
+  "impostazioni": {
+    "step_temp": 1.0,
+    "theme": "Light"
+  }
+}
