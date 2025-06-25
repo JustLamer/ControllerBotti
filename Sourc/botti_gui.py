@@ -47,8 +47,12 @@ def load_config():
 load_config()
 
 # Storico temperature e valvole
+overview = {}
+frames = {}
+overview = {}
 storico = {key: [] for key in botti_data}
 valve_history = {key: [] for key in botti_data}
+legend_visibility = {key: True for key in botti_data}
 
 # --- Funzioni utility ---
 
@@ -56,16 +60,12 @@ def save_config():
     with open(SALVATAGGIO_FILE, "w") as f:
         json.dump({"botti_data": botti_data, "impostazioni": impostazioni}, f, indent=2)
 
-# Modifica soglie
-
 def modifica_soglia(nome, tipo, delta, label):
     step = impostazioni.get('step_temp', 0.1)
     new_val = round(botti_data[nome][tipo] + delta * step, 1)
     botti_data[nome][tipo] = new_val
     label.config(text=f"{new_val:.1f}")
     save_config()
-
-# Tema Light/Dark
 
 def apply_theme():
     theme = impostazioni.get("theme", "Light")
@@ -80,14 +80,20 @@ def apply_theme():
 
 apply_theme()
 
-# Logica valvola
+def toggle_legend(nome):
+    legend_visibility[nome] = not legend_visibility[nome]
+    ax = frames[nome]['ax']
+    leg = ax.get_legend()
+    if leg:
+        leg.set_visible(legend_visibility[nome])
+    frames[nome]['canvas'].draw()
+
+# Logica valvola con isteresi
 
 def auto_valvola(nome, temp):
     entry = botti_data[nome]
-    # Manual override takes precedence
     if entry['forced'] is not None:
         return entry['forced']
-    # Hysteresis: open above max, close below min, otherwise keep last state
     prev = entry.get('valvola', 'Chiusa')
     if temp > entry['max_temp']:
         return 'Aperta'
@@ -100,11 +106,10 @@ def forza_valvola(nome, action):
     botti_data[nome]['valvola'] = action
     save_config()
 
-# Aggiorna grafico
-
+# Grafico con storia valvole
 def update_graph(nome, ax, canvas, time_range, tick_interval):
     ax.clear()
-    temp_data = storico[nome]
+    data = storico[nome]
     now = datetime.datetime.now()
     if time_range != 'Tutto':
         delta_map = {
@@ -121,22 +126,18 @@ def update_graph(nome, ax, canvas, time_range, tick_interval):
             'Ultimo mese': datetime.timedelta(days=30),
         }
         cutoff = now - delta_map.get(time_range, datetime.timedelta.max)
-        temp_data = [(t,v) for t,v in temp_data if t >= cutoff]
-    if temp_data:
-        x = [t for t,_ in temp_data]
-        y = [v for _,v in temp_data]
+        data = [(t,v) for t,v in data if t >= cutoff]
+    if data:
+        x, y = zip(*data)
         ax.plot(x, y, marker='o', label='Temp')
         entry = botti_data[nome]
-        # Soglie
         ax.axhline(entry['min_temp'], color='blue', linestyle='--', label='Min Temp')
         ax.axhline(entry['max_temp'], color='red', linestyle='--', label='Max Temp')
-        # Valve history markers
         vh = valve_history[nome]
         open_times = [t for t,s in vh if s == 'Aperta']
         close_times = [t for t,s in vh if s == 'Chiusa']
         ax.scatter(open_times, [entry['max_temp']]*len(open_times), marker='v', color='orange', label='Valve Open')
         ax.scatter(close_times, [entry['min_temp']]*len(close_times), marker='^', color='purple', label='Valve Closed')
-        # Locator
         if tick_interval != 'Auto':
             mins = int(tick_interval.split()[0])
             ax.xaxis.set_major_locator(mdates.MinuteLocator(interval=mins))
@@ -147,81 +148,41 @@ def update_graph(nome, ax, canvas, time_range, tick_interval):
     ax.set_title(f"Andamento {nome}")
     ax.set_xlabel('Ora')
     ax.set_ylabel('°C')
-    ax.legend(loc='upper right')
+    leg = ax.legend(loc='upper right')
+    if not legend_visibility[nome] and leg:
+        leg.set_visible(False)
     ax.grid(True)
     canvas.draw()
 
-# --- Costruzione UI ---
-frames = {}
-overview = {}
-
-style = ttk.Style(app)
-style.theme_use('clam')
-nb = ttk.Notebook(app)
-nb.pack(fill='both', expand=True)
-
-# Panoramica
-tab0 = ttk.Frame(nb)
-nb.add(tab0, text="📊 Panoramica")
-ttk.Label(tab0, text="Situazione Generale", font=('Helvetica',26)).pack(pady=10)
-settings = ttk.LabelFrame(tab0, text="⚙️ Impostazioni", padding=10)
-settings.pack(fill='x', pady=5)
-# Theme
-th_var = tk.StringVar(value=impostazioni['theme'])
-th_combo = ttk.Combobox(settings, values=['Light','Dark'], textvariable=th_var,
-                        state='readonly', width=14, style='Large.TCombobox')
-th_combo.pack(side='left', padx=5)
-th_combo.bind('<<ComboboxSelected>>', lambda e: (impostazioni.update({'theme': th_var.get()}), apply_theme(), save_config()))
-# Step (ingrandito)
-step_var = tk.DoubleVar(value=impostazioni['step_temp'])
-step_combo = ttk.Combobox(settings, values=[0.1, 0.2, 0.5, 1.0], textvariable=step_var,
-                          state='readonly', width=12, style='Large.TCombobox')
-step_combo.pack(side='left', padx=5)
-step_combo.bind('<<ComboboxSelected>>', lambda e: (impostazioni.update({'step_temp': float(step_var.get())}), save_config()))
-
-barrel_frame = ttk.Frame(tab0)
-barrel_frame.pack(pady=15)
-for nome in botti_data:
-    f = tk.Frame(barrel_frame)
-    f.pack(side='left', padx=20)
-    tk.Label(f, image=app.barrel_img).pack()
-    state_lbl = tk.Label(f, text='🟢', font=('Helvetica',24))
-    state_lbl.place(relx=0.15, rely=0.15, anchor='center')
-    forced_lbl = tk.Label(f, text='', font=('Helvetica',18))
-    forced_lbl.place(relx=0.85, rely=0.15, anchor='center')
-    tp = ttk.Label(f, text=f"Temp: {botti_data[nome]['temperatura']}°C", font=('Helvetica',16))
-    tp.place(relx=0.5, rely=0.5, anchor='center')
-    vl = ttk.Label(f, text=f"Valvola: {botti_data[nome]['valvola']}", font=('Helvetica',16))
-    vl.place(relx=0.5, rely=0.7, anchor='center')
-    overview[nome] = {'state': state_lbl, 'temp': tp, 'valve': vl, 'forced': forced_lbl}
-
-# Tabs dettaglio
+# Costruzione UI
 def build_detail_tab(nome):
     tab = ttk.Frame(nb)
     nb.add(tab, text=f"🪵 {nome}")
     left = ttk.Frame(tab); left.pack(side='left', fill='y', padx=10, pady=10)
     right = ttk.Frame(tab); right.pack(side='right', fill='both', expand=True, padx=10, pady=10)
-    # Controls left
+    # Comandi inline
     ctrl = ttk.Frame(left); ctrl.pack(pady=5)
     for text, action in [('Apri','Aperta'),('Chiudi','Chiusa'),('Auto',None)]:
         ttk.Button(ctrl, text=text, width=8, command=lambda n=nome,a=action: forza_valvola(n,a)).pack(side='left', padx=5)
-    forced_lbl = tk.Label(left, text='', font=('Helvetica',18))
-    forced_lbl.pack(pady=(5,10))
-    # Soglie personalizzabili
+    # Forced + Legend toggle
+    fl = ttk.Frame(left); fl.pack(pady=(5,10))
+    forced_lbl = tk.Label(fl, text='', font=('Helvetica',18))
+    forced_lbl.pack(side='left')
+    ttk.Button(fl, text='Legenda', width=8, command=lambda n=nome: toggle_legend(n)).pack(side='left', padx=5)
+    # Soglie con pulsanti più grandi e spaziatura
     ttk.Label(left, text='Soglie (°C)', font=('Helvetica',16)).pack(pady=5)
-    thr_frame = ttk.Frame(left); thr_frame.pack(pady=5)
+    thr_frame = ttk.Frame(left); thr_frame.pack(pady=8)
     ttk.Label(thr_frame, text='Min:').grid(row=0, column=0, sticky='e')
     min_lbl = ttk.Label(thr_frame, text=f"{botti_data[nome]['min_temp']:.1f}", font=('Helvetica',16))
     min_lbl.grid(row=0, column=1, padx=5)
-    ttk.Button(thr_frame, text='-', width=4, command=lambda n=nome,l=min_lbl: modifica_soglia(n,'min_temp',-1,l)).grid(row=0, column=2)
-    ttk.Button(thr_frame, text='+', width=4, command=lambda n=nome,l=min_lbl: modifica_soglia(n,'min_temp',1,l)).grid(row=0, column=3)
-    ttk.Label(thr_frame, text='Max:').grid(row=1, column=0, sticky='e', pady=5)
+    ttk.Button(thr_frame, text='-', width=5, command=lambda n=nome,l=min_lbl: modifica_soglia(n,'min_temp',-1,l)).grid(row=0, column=2)
+    ttk.Button(thr_frame, text='+', width=5, command=lambda n=nome,l=min_lbl: modifica_soglia(n,'min_temp',1,l)).grid(row=0, column=3)
+    ttk.Label(thr_frame, text='Max:').grid(row=1, column=0, sticky='e', pady=(10,0))
     max_lbl = ttk.Label(thr_frame, text=f"{botti_data[nome]['max_temp']:.1f}", font=('Helvetica',16))
     max_lbl.grid(row=1, column=1, padx=5)
-    ttk.Button(thr_frame, text='-', width=4, command=lambda n=nome,l=max_lbl: modifica_soglia(n,'max_temp',-1,l)).grid(row=1, column=2)
-    ttk.Button(thr_frame, text='+', width=4, command=lambda n=nome,l=max_lbl: modifica_soglia(n,'max_temp',1,l)).grid(row=1, column=3)
-    # Range/tick selectors
-
+    ttk.Button(thr_frame, text='-', width=5, command=lambda n=nome,l=max_lbl: modifica_soglia(n,'max_temp',-1,l)).grid(row=1, column=2)
+    ttk.Button(thr_frame, text='+', width=5, command=lambda n=nome,l=max_lbl: modifica_soglia(n,'max_temp',1,l)).grid(row=1, column=3)
+    # Range/tick selectors con OptionMenu touchscreen
     ttk.Label(left, text='Intervallo dati:', font=('Helvetica',14)).pack(pady=5)
     range_var = tk.StringVar(value='Ultime 24 ore')
     range_menu = tk.OptionMenu(left, range_var, *delta_map.keys())
@@ -238,7 +199,41 @@ def build_detail_tab(nome):
     NavigationToolbar2Tk(canvas, right).update(); canvas.draw()
     frames[nome] = {'ax': ax, 'canvas': canvas, 'range': range_var, 'tick': tick_var, 'forced_lbl': forced_lbl}
 
-# Prepare delta_map for dynamic build
+# --- Notebook principale e Panoramica ---
+style = ttk.Style(app); style.theme_use('clam')
+nb = ttk.Notebook(app)
+nb.pack(fill='both', expand=True)
+
+# Tab Panoramica
+tab0 = ttk.Frame(nb)
+nb.add(tab0, text="📊 Panoramica")
+# Costruisci overview su tab0
+# Impostazioni generali
+settings = ttk.LabelFrame(tab0, text="⚙️ Impostazioni", padding=10)
+settings.pack(fill='x', pady=5)
+th_var = tk.StringVar(value=impostazioni['theme'])
+th_combo = ttk.Combobox(settings, values=['Light','Dark'], textvariable=th_var,
+                        state='readonly', width=14, style='Large.TCombobox')
+th_combo.pack(side='left', padx=5)
+th_combo.bind('<<ComboboxSelected>>', lambda e: (impostazioni.update({'theme': th_var.get()}), apply_theme(), save_config()))
+step_var = tk.DoubleVar(value=impostazioni['step_temp'])
+step_combo = ttk.Combobox(settings, values=[0.1, 0.2, 0.5, 1.0], textvariable=step_var,
+                          state='readonly', width=12, style='Large.TCombobox')
+step_combo.pack(side='left', padx=5)
+step_combo.bind('<<ComboboxSelected>>', lambda e: (impostazioni.update({'step_temp': float(step_var.get())}), save_config()))
+# Frame overview botti
+barrel_frame = ttk.Frame(tab0)
+barrel_frame.pack(pady=15)
+for nome in botti_data:
+    f = tk.Frame(barrel_frame); f.pack(side='left', padx=20)
+    tk.Label(f, image=app.barrel_img).pack()
+    state_lbl = tk.Label(f, text='🟢', font=('Helvetica',24)); state_lbl.place(relx=0.15, rely=0.15, anchor='center')
+    forced_lbl = tk.Label(f, text='', font=('Helvetica',18)); forced_lbl.place(relx=0.85, rely=0.15, anchor='center')
+    tp = ttk.Label(f, text=f"Temp: {botti_data[nome]['temperatura']}°C", font=('Helvetica',16)); tp.place(relx=0.5, rely=0.5, anchor='center')
+    vl = ttk.Label(f, text=f"Valvola: {botti_data[nome]['valvola']}", font=('Helvetica',16)); vl.place(relx=0.5, rely=0.7, anchor='center')
+    overview[nome] = {'state': state_lbl, 'temp': tp, 'valve': vl, 'forced': forced_lbl}
+
+# Prepara delta_map
 delta_map = {
     'Tutto': None,
     'Ultimi 1 minuto': datetime.timedelta(minutes=1),
@@ -253,34 +248,29 @@ delta_map = {
     'Ultima settimana': datetime.timedelta(days=7),
     'Ultimo mese': datetime.timedelta(days=30),
 }
-
+# Costruisci tabs dettaglio
 for nome in botti_data:
     build_detail_tab(nome)
 
 # Loop di aggiornamento
+
 def update_all():
     now = datetime.datetime.now()
     for nome, info in frames.items():
         temp = round(botti_data[nome]['temperatura'] + random.uniform(-0.2,0.2),1)
         botti_data[nome]['temperatura'] = temp
         storico[nome].append((now,temp))
-        if len(storico[nome])>1000:
-            storico[nome] = storico[nome][-1000:]
-        # Valve logic
+        if len(storico[nome])>1000: storico[nome]=storico[nome][-1000:]
         vstate = auto_valvola(nome,temp)
         botti_data[nome]['valvola'] = vstate
-        # Record valve history
         valve_history[nome].append((now, vstate))
-        if len(valve_history[nome])>1000:
-            valve_history[nome] = valve_history[nome][-1000:]
-        # Update detail forced icon and no detail dot
-        icon = '🔒' if botti_data[nome]['forced'] in ('Aperta','Chiusa') else ''
-        info['forced_lbl'].config(text=icon)
-        # Update detail graph
+        if len(valve_history[nome])>1000: valve_history[nome]=valve_history[nome][-1000:]
+        info['forced_lbl'].config(text='🔒' if botti_data[nome]['forced'] in ('Aperta','Chiusa') else '')
         update_graph(nome, info['ax'], info['canvas'], info['range'].get(), info['tick'].get())
-    # Overview update
     for nome, widgets in overview.items():
-        entry = botti_data[nome]; tp = entry['temperatura']
+        entry = botti_data[nome]
+        tp = entry['temperatura']
+        # Calcolo dot e colore per overview
         if tp < entry['min_temp']:
             dot, color = '🔵', 'blue'
         elif tp > entry['max_temp']:
