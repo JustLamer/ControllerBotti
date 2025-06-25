@@ -1,14 +1,14 @@
 {
   "botti_data": {
     "Botte 1": {
-      "temperatura": 31.7,
+      "temperatura": 31.5,
       "valvola": "Aperta",
       "min_temp": 28.1,
       "max_temp": 30.0,
       "forced": null
     },
     "Botte 2": {
-      "temperatura": 21.8,
+      "temperatura": 20.7,
       "valvola": "Chiusa",
       "min_temp": 26.0,
       "max_temp": 25.8,
