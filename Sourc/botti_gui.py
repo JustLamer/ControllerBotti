@@ -232,7 +232,12 @@ for nome in botti_data:
     forced_lbl = tk.Label(f, text='', font=('Helvetica',18)); forced_lbl.place(relx=0.85, rely=0.15, anchor='center')
     tp = ttk.Label(f, text=f"Temp: {botti_data[nome]['temperatura']}°C", font=('Helvetica',16)); tp.place(relx=0.5, rely=0.5, anchor='center')
     vl = ttk.Label(f, text=f"Valvola: {botti_data[nome]['valvola']}", font=('Helvetica',16)); vl.place(relx=0.5, rely=0.7, anchor='center')
-    overview[nome] = {'state': state_lbl, 'temp': tp, 'valve': vl, 'forced': forced_lbl}
+    # Visualizza soglie colorate nell'overview
+    min_lbl_ov = tk.Label(f, text=f"{botti_data[nome]['min_temp']:.1f}°C", font=('Helvetica',12), fg='blue')
+    min_lbl_ov.place(relx=0.2, rely=0.85, anchor='center')
+    max_lbl_ov = tk.Label(f, text=f"{botti_data[nome]['max_temp']:.1f}°C", font=('Helvetica',12), fg='red')
+    max_lbl_ov.place(relx=0.8, rely=0.85, anchor='center')
+    overview[nome] = {'state': state_lbl, 'temp': tp, 'valve': vl, 'forced': forced_lbl, 'min_lbl': min_lbl_ov, 'max_lbl': max_lbl_ov}
 
 # Prepara delta_map
 delta_map = {
