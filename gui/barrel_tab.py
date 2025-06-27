@@ -39,7 +39,7 @@ class BarrelTab(ctk.CTkFrame):
         self.lock_lbl = ctk.CTkLabel(left, image=None, text="", width=36)
         self.lock_lbl.pack(pady=3)
 
-        # --- MODALITA' VALVOLA ---
+        # ComboBox modalità valvola
         self.mode_var = ctk.StringVar()
         ctk.CTkLabel(left, text="Modalità valvola:", font=ctk.CTkFont(size=17)).pack(pady=(8,2))
         self.mode_menu = ctk.CTkComboBox(
@@ -49,12 +49,12 @@ class BarrelTab(ctk.CTkFrame):
             width=140,
             height=44,
             font=ctk.CTkFont(size=19),
-            dropdown_font=ctk.CTkFont(size=19)
+            dropdown_font=ctk.CTkFont(size=19),
+            command=self.on_mode_selected
         )
-        self.mode_menu.pack(pady=(0,10))
-        self.mode_menu.bind("<<ComboboxSelected>>", self.on_mode_selected)
+        self.mode_menu.pack(pady=(0, 10))
 
-        # --- STEP ---
+        # Step size
         ctk.CTkLabel(left, text="Step soglia (°C):", font=ctk.CTkFont(size=17)).pack()
         self.step_var = ctk.StringVar(value=str(app.settings.get("step_temp", 0.1)))
         steps = ["0.1", "0.2", "0.5", "1.0"]
@@ -65,7 +65,7 @@ class BarrelTab(ctk.CTkFrame):
         self.step_menu.pack(pady=6)
         self.step_menu.bind("<<ComboboxSelected>>", self.change_step)
 
-        # --- SOGLIE ---
+        # Soglie regolabili
         soglie_frame = ctk.CTkFrame(left, fg_color="#223118", corner_radius=10)
         soglie_frame.pack(pady=12)
         ctk.CTkLabel(soglie_frame, text="Soglia Min (°C)", font=ctk.CTkFont(size=19)).grid(row=0, column=0, padx=12, pady=9)
@@ -83,7 +83,7 @@ class BarrelTab(ctk.CTkFrame):
         ctk.CTkButton(soglie_frame, text="+", width=44, height=44, font=ctk.CTkFont(size=20),
                       command=lambda: self.modifica_soglia("max_temp", 1)).grid(row=1, column=3, padx=4)
 
-        # --- INTERVALLO DATI ---
+        # Intervallo dati
         ctk.CTkLabel(left, text="Intervallo dati:", font=ctk.CTkFont(size=17)).pack(pady=(15, 2))
         self.range_var = ctk.StringVar(value="Ultime 2 ore")
         self.range_menu = ctk.CTkComboBox(
@@ -98,7 +98,7 @@ class BarrelTab(ctk.CTkFrame):
         self.range_menu.pack(pady=(0, 12))
         self.range_menu.bind("<<ComboboxSelected>>", lambda e: self.refresh())
 
-        # --- DESTRA: GRAFICO ---
+        # DESTRA: GRAFICO
         right = ctk.CTkFrame(self, fg_color='transparent')
         right.grid(row=0, column=1, sticky="nsew", padx=8, pady=10)
         self.fig, self.ax = plt.subplots(figsize=(5.2, 2.6))
@@ -122,17 +122,12 @@ class BarrelTab(ctk.CTkFrame):
     def on_mode_selected(self, event=None):
         mode = self.mode_var.get()
         b = self.app.botti_data[self.nome]
+        print(f"[DEBUG] on_mode_selected {self.nome}: user set mode to {mode}")
         if mode == "Auto":
             b["forced"] = None
-        elif mode == "Aperta":
-            b["forced"] = "Aperta"
-        elif mode == "Chiusa":
-            b["forced"] = "Chiusa"
+        elif mode in ("Aperta", "Chiusa"):
+            b["forced"] = mode
         save_config(self.app.botti_data, self.app.settings)
-        # Aggiorna subito tutte le view (anche overview)
-        for page in self.app.pages.values():
-            if hasattr(page, "refresh"):
-                page.refresh()
 
     def modifica_soglia(self, tipo, delta):
         step = float(self.app.settings.get("step_temp", 0.1))
@@ -142,8 +137,8 @@ class BarrelTab(ctk.CTkFrame):
 
     def refresh(self):
         b = self.app.botti_data[self.nome]
-        # Aggiorna la ComboBox SOLO se serve
         forced = b.get("forced")
+        print(f"[DEBUG] refresh {self.nome}: forced={forced}, mode_var={self.mode_var.get()}")
         expected = {
             None: "Auto",
             "Aperta": "Aperta",
@@ -151,7 +146,6 @@ class BarrelTab(ctk.CTkFrame):
         }[forced]
         if self.mode_var.get() != expected:
             self.mode_var.set(expected)
-
         self.dot_lbl.configure(text_color=self.get_dot_color())
         self.temp_lbl.configure(text=f"{b['temperatura']} °C")
         self.valve_lbl.configure(text=f"Valvola: {b['valvola']}")
