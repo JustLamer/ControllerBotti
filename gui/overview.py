@@ -1,55 +1,81 @@
-import tkinter as tk
-from tkinter import ttk
+import customtkinter as ctk
+from PIL import Image
+import os
 
-class OverviewFrame(ttk.Frame):
-    def __init__(self, parent, controller):
-        super().__init__(parent)
-        self.controller = controller
-        self.labels = {}
-        settings = ttk.LabelFrame(self, text="⚙️ Impostazioni", padding=10)
-        settings.pack(fill='x', pady=5)
-        self.sv = tk.DoubleVar(value=controller.settings['step_temp'])
-        step_cb = ttk.Combobox(settings, values=[0.1, 0.2, 0.5, 1.0], textvariable=self.sv,
-                               state='readonly', width=12, style='Large.TCombobox')
-        step_cb.pack(side='left', padx=5)
-        step_cb.bind('<<ComboboxSelected>>', self.on_step_change)
-        bf = ttk.Frame(self)
-        bf.pack(pady=15)
-        for nome in controller.botti_data:
-            f = tk.Frame(bf, bg="#2E2E2E")
-            f.pack(side='left', padx=20)
-            tk.Label(f, image=controller.barrel_img, bg="#2E2E2E").pack()
-            state_lbl = tk.Label(f, text='🟢', font=('Helvetica', 24), bg="#2E2E2E")
-            state_lbl.place(relx=0.15, rely=0.15, anchor='center')
-            forced_lbl = tk.Label(f, text='', font=('Helvetica', 18), bg="#2E2E2E")
-            forced_lbl.place(relx=0.85, rely=0.15, anchor='center')
-            tp = ttk.Label(f, text="", font=('Helvetica', 16))
-            tp.place(relx=0.5, rely=0.5, anchor='center')
-            vl = ttk.Label(f, text="", font=('Helvetica', 16))
-            vl.place(relx=0.5, rely=0.7, anchor='center')
-            min_lbl = tk.Label(f, text="", font=('Helvetica', 12), fg='blue', bg="#2E2E2E")
-            min_lbl.place(relx=0.2, rely=0.85, anchor='center')
-            max_lbl = tk.Label(f, text="", font=('Helvetica', 12), fg='red', bg="#2E2E2E")
-            max_lbl.place(relx=0.8, rely=0.85, anchor='center')
-            self.labels[nome] = {
-                'state': state_lbl, 'temp': tp, 'valve': vl, 'forced': forced_lbl,
-                'min': min_lbl, 'max': max_lbl
-            }
+class OverviewFrame(ctk.CTkFrame):
+    def __init__(self, master, app, **kwargs):
+        super().__init__(master, fg_color="#252c26", **kwargs)
+        self.app = app
+        self.botti_data = app.botti_data
+
+        # Immagine lucchetto
+        lock_path = os.path.join("assets", "lock.png")
+        lock_img = Image.open(lock_path).resize((28,28))
+        self.lock_icon = ctk.CTkImage(light_image=lock_img, dark_image=lock_img)
+
+        # Layout: centro, un riquadro per botte
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(0, weight=1)
+
+        center = ctk.CTkFrame(self, fg_color="transparent")
+        center.grid(row=0, column=0, sticky="nsew")
+
+        # Mostra tutte le botti centrati
+        self.boxes = {}
+        frame = ctk.CTkFrame(center, fg_color="transparent")
+        frame.pack(expand=True, pady=32)
+        for nome in self.botti_data:
+            box = ctk.CTkFrame(frame, fg_color="#233b26", corner_radius=19, width=260, height=360)
+            box.pack(side="left", padx=30, pady=8, expand=False)
+            box.pack_propagate(False)
+            # Immagine barrel
+            img_label = ctk.CTkLabel(box, image=app.barrel_img, text="")
+            img_label.pack(pady=(16, 6))
+            # Stato dot
+            self.boxes[nome] = {}
+            self.boxes[nome]["dot"] = ctk.CTkLabel(box, text="●", font=ctk.CTkFont(size=37), text_color="#6ddb57")
+            self.boxes[nome]["dot"].pack()
+            # Temperatura
+            self.boxes[nome]["temp"] = ctk.CTkLabel(box, text="", font=ctk.CTkFont(size=28, weight="bold"))
+            self.boxes[nome]["temp"].pack(pady=4)
+            # Valvola
+            self.boxes[nome]["valve"] = ctk.CTkLabel(box, text="", font=ctk.CTkFont(size=23))
+            self.boxes[nome]["valve"].pack(pady=(0, 2))
+            # Lucchetto solo se forced
+            self.boxes[nome]["lock"] = ctk.CTkLabel(box, image=None, text="", width=32)
+            self.boxes[nome]["lock"].pack(pady=3)
+            # Soglie min/max
+            soglie_frame = ctk.CTkFrame(box, fg_color="transparent")
+            soglie_frame.pack(pady=(10,0))
+            self.boxes[nome]["min"] = ctk.CTkLabel(soglie_frame, text="", font=ctk.CTkFont(size=16), text_color="blue")
+            self.boxes[nome]["min"].pack(side="left", padx=(0,10))
+            self.boxes[nome]["max"] = ctk.CTkLabel(soglie_frame, text="", font=ctk.CTkFont(size=16), text_color="red")
+            self.boxes[nome]["max"].pack(side="left", padx=(10,0))
+
         self.refresh()
 
     def refresh(self):
-        for nome, lbls in self.labels.items():
-            e = self.controller.botti_data[nome]
-            tp = e['temperatura']
-            dot = '🟢' if e['min_temp'] <= tp <= e['max_temp'] else ('🔴' if tp > e['max_temp'] else '🔵')
-            color = 'green' if dot == '🟢' else ('red' if dot == '🔴' else 'blue')
-            lbls['state'].config(text=dot, fg=color)
-            lbls['temp'].config(text=f"Temp: {tp:.1f}°C")
-            lbls['valve'].config(text=f"Valvola: {e['valvola']}")
-            lbls['forced'].config(text='🔒' if e['forced'] in ('Aperta', 'Chiusa') else '')
-            lbls['min'].config(text=f"{e['min_temp']:.1f}°C")
-            lbls['max'].config(text=f"{e['max_temp']:.1f}°C")
-
-    def on_step_change(self, event):
-        val = float(self.sv.get())
-        self.controller.settings['step_temp'] = val
+        # Aggiorna tutti i widget panoramica
+        for nome, box in self.boxes.items():
+            b = self.botti_data[nome]
+            t = b["temperatura"]
+            # Stato dot
+            if t < b["min_temp"]:
+                color = "#459bed"
+            elif t > b["max_temp"]:
+                color = "#ed4747"
+            else:
+                color = "#6ddb57"
+            box["dot"].configure(text_color=color)
+            box["temp"].configure(text=f"{t:.1f} °C")
+            # Stato valvola
+            stato_valvola = b["valvola"] if b["valvola"] in ("Aperta","Chiusa") else "Chiusa"
+            box["valve"].configure(text=f"Valvola: {stato_valvola}")
+            # Lucchetto solo se forzata
+            if b.get("forced") in ("Aperta", "Chiusa"):
+                box["lock"].configure(image=self.lock_icon)
+            else:
+                box["lock"].configure(image=None)
+            # Soglie
+            box["min"].configure(text=f"Min: {b['min_temp']:.1f}")
+            box["max"].configure(text=f"Max: {b['max_temp']:.1f}")

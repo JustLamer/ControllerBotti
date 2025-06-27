@@ -1,58 +1,96 @@
-import tkinter as tk
-from tkinter import ttk
+import customtkinter as ctk
+from PIL import Image
+from gui.sidebar import Sidebar
 from gui.overview import OverviewFrame
 from gui.barrel_tab import BarrelTab
-from config import load_config, save_config, BARREL_IMAGE_PATH, DEFAULT_BOTTI_DATA
+from config import load_config, save_config
 from styles import setup_styles
-from PIL import Image, ImageTk
+import os
 
-class WineApp(tk.Tk):
+ctk.set_appearance_mode("dark")
+ctk.set_default_color_theme("green")
+
+class ModernWineApp(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.title("Controllo Botti - Livello 2")
-        self.geometry("1280x900")
-        self.configure(bg="#2E2E2E")
+        self.title("Controllo Botti - Modern UI")
+        self.geometry("1200x800")
+        self.minsize(950, 600)
         setup_styles(self)
+
+        # --- Dati/Config ---
         self.botti_data, self.settings = load_config()
-        self.storico = {k: [] for k in self.botti_data}
-        self.valve_history = {k: [] for k in self.botti_data}
+        import datetime
+        # Inizializza history se non presente
+        for b in self.botti_data.values():
+            if "history" not in b:
+                now = datetime.datetime.now()
+                b["history"] = [(now - datetime.timedelta(minutes=(19-i)*2), b["temperatura"]) for i in range(20)]
+            if "forced" not in b:
+                b["forced"] = None
+            if "valvola" not in b or b["valvola"] not in ("Aperta", "Chiusa"):
+                b["valvola"] = "Chiusa"
 
-        # Carica immagine barile (unica istanza condivisa)
-        self.barrel_img = ImageTk.PhotoImage(Image.open(BARREL_IMAGE_PATH).resize((200,200), Image.LANCZOS))
+        # --- Icone ---
+        barrel_icon_path = os.path.join("assets", "barrel.png")
+        self.barrel_img = ctk.CTkImage(light_image=Image.open(barrel_icon_path),
+                                       dark_image=Image.open(barrel_icon_path),
+                                       size=(48, 48))
+        # --- Sidebar ---
+        tab_list = [("Panoramica", self.barrel_img)] + [
+            (nome, self.barrel_img) for nome in self.botti_data
+        ]
+        self.sidebar = Sidebar(self, tab_list, self.switch_tab)
+        self.sidebar.grid(row=0, column=0, sticky="ns")
 
-        self.nb = ttk.Notebook(self)
-        self.nb.pack(fill='both', expand=True)
-        self.overview_frame = OverviewFrame(self.nb, self)
-        self.nb.add(self.overview_frame, text="📊 Panoramica")
-        self.tabs = {}
+        # --- Main Area ---
+        self.pages = {}
+        self.pages["Panoramica"] = OverviewFrame(self, self)
         for nome in self.botti_data:
-            tab = BarrelTab(self.nb, self, nome)
-            self.nb.add(tab, text=f"🪵 {nome}")
-            self.tabs[nome] = tab
+            self.pages[nome] = BarrelTab(self, self, nome)
+        self.current_tab = None
+        self.switch_tab("Panoramica")
 
-        self.update_all()
+        # Layout responsive
+        self.grid_columnconfigure(1, weight=1)
+        self.grid_rowconfigure(0, weight=1)
 
-    def update_all(self):
-        from gui.graph_utils import auto_valvola
-        import datetime, random
+        # Loop di aggiornamento dati periodico
+        self.after(2000, self.periodic_update)
 
-        now = datetime.datetime.now()
-        for nome in self.botti_data:
-            temp = round(self.botti_data[nome]['temperatura'] + random.uniform(-0.2,0.2), 1)
-            self.botti_data[nome]['temperatura'] = temp
-            self.storico[nome].append((now, temp))
-            if len(self.storico[nome]) > 1000:
-                self.storico[nome] = self.storico[nome][-1000:]
-            val = auto_valvola(self.botti_data, nome, temp)
-            self.botti_data[nome]['valvola'] = val
-            self.valve_history[nome].append((now, val))
-            if len(self.valve_history[nome]) > 1000:
-                self.valve_history[nome] = self.valve_history[nome][-1000:]
-            self.tabs[nome].refresh()
-        self.overview_frame.refresh()
+    def switch_tab(self, tab_name):
+        if self.current_tab:
+            self.pages[self.current_tab].grid_forget()
+        self.pages[tab_name].grid(row=0, column=1, sticky="nsew", padx=28, pady=28)
+        self.current_tab = tab_name
+        self.sidebar.select(tab_name)
+
+    def periodic_update(self):
+        import random, datetime
+        for nome, b in self.botti_data.items():
+            # Simulazione aggiornamento storico e temperatura
+            nuova_temp = round(b["temperatura"] + random.uniform(-0.2, 0.2), 1)
+            b["temperatura"] = nuova_temp
+            now = datetime.datetime.now()
+            b["history"].append((now, nuova_temp))
+            b["history"] = b["history"][-50:]  # Tieni ultimi 50 punti
+            # Logica valvola con isteresi/forzatura (mai 'Auto')
+            if b.get("forced", None) in ("Aperta", "Chiusa"):
+                b["valvola"] = b["forced"]
+            else:
+                if b["temperatura"] > b["max_temp"]:
+                    b["valvola"] = "Aperta"
+                elif b["temperatura"] < b["min_temp"]:
+                    b["valvola"] = "Chiusa"
+                else:
+                    if b.get("valvola") not in ("Aperta", "Chiusa"):
+                        b["valvola"] = "Chiusa"  # Default
+        # Aggiorna UI
+        for page in self.pages.values():
+            if hasattr(page, "refresh"):
+                page.refresh()
         save_config(self.botti_data, self.settings)
-        self.after(5000, self.update_all)
+        self.after(5000, self.periodic_update)
 
 if __name__ == "__main__":
-    app = WineApp()
-    app.mainloop()
+    ModernWineApp().mainloop()
