@@ -59,11 +59,16 @@ class BarrelTab(ctk.CTkFrame):
         self.step_var = ctk.StringVar(value=str(app.settings.get("step_temp", 0.1)))
         steps = ["0.1", "0.2", "0.5", "1.0"]
         self.step_menu = ctk.CTkComboBox(
-            left, values=steps, variable=self.step_var,
-            width=110, height=44, font=ctk.CTkFont(size=21), dropdown_font=ctk.CTkFont(size=21)
+            left,
+            values=steps,
+            variable=self.step_var,
+            width=110,
+            height=44,
+            font=ctk.CTkFont(size=21),
+            dropdown_font=ctk.CTkFont(size=21),
+            command=self.change_step
         )
         self.step_menu.pack(pady=6)
-        self.step_menu.bind("<<ComboboxSelected>>", self.change_step)
 
         # Soglie regolabili
         soglie_frame = ctk.CTkFrame(left, fg_color="#223118", corner_radius=10)
