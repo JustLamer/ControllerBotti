@@ -1,67 +1,78 @@
 import customtkinter as ctk
-from PIL import Image
-import os
 
 class OverviewFrame(ctk.CTkFrame):
     def __init__(self, master, app, **kwargs):
-        super().__init__(master, fg_color="#252c26", **kwargs)
+        super().__init__(master, fg_color="#202d16", **kwargs)
         self.app = app
-        self.botti_data = app.botti_data
-
-        lock_path = os.path.join("assets", "lock.png")
-        lock_img = Image.open(lock_path).resize((28,28))
-        self.lock_icon = ctk.CTkImage(light_image=lock_img, dark_image=lock_img)
-
-        self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure((0, 1, 2), weight=1)
         self.grid_rowconfigure(0, weight=1)
+        self.card_widgets = {}
+        self._build_ui()
 
-        center = ctk.CTkFrame(self, fg_color="transparent")
-        center.grid(row=0, column=0, sticky="nsew")
+    def _build_ui(self):
+        from PIL import Image
+        botti = list(self.app.botti_data.keys())
+        for i, nome in enumerate(botti):
+            b = self.app.botti_data[nome]
+            card = ctk.CTkFrame(self, width=340, height=280, corner_radius=24, fg_color="#293f23")
+            card.grid(row=0, column=i, padx=30, pady=32, sticky="n")
+            card.grid_propagate(False)
+            img = self.app.barrel_img
+            img_lbl = ctk.CTkLabel(card, image=img, text="", width=90, height=90)
+            img_lbl.pack(pady=(17, 7))
+            title = ctk.CTkLabel(card, text=nome, font=ctk.CTkFont(size=28, weight="bold"))
+            title.pack()
+            self.card_widgets[nome] = {}
 
-        self.boxes = {}
-        frame = ctk.CTkFrame(center, fg_color="transparent")
-        frame.pack(expand=True, pady=32)
-        for nome in self.botti_data:
-            box = ctk.CTkFrame(frame, fg_color="#233b26", corner_radius=19, width=260, height=360)
-            box.pack(side="left", padx=30, pady=8, expand=False)
-            box.pack_propagate(False)
-            img_label = ctk.CTkLabel(box, image=app.barrel_img, text="")
-            img_label.pack(pady=(16, 6))
-            self.boxes[nome] = {}
-            self.boxes[nome]["dot"] = ctk.CTkLabel(box, text="●", font=ctk.CTkFont(size=37), text_color="#6ddb57")
-            self.boxes[nome]["dot"].pack()
-            self.boxes[nome]["temp"] = ctk.CTkLabel(box, text="", font=ctk.CTkFont(size=28, weight="bold"))
-            self.boxes[nome]["temp"].pack(pady=4)
-            self.boxes[nome]["valve"] = ctk.CTkLabel(box, text="", font=ctk.CTkFont(size=23))
-            self.boxes[nome]["valve"].pack(pady=(0, 2))
-            self.boxes[nome]["lock"] = ctk.CTkLabel(box, image=None, text="", width=32)
-            self.boxes[nome]["lock"].pack(pady=3)
-            soglie_frame = ctk.CTkFrame(box, fg_color="transparent")
-            soglie_frame.pack(pady=(10,0))
-            self.boxes[nome]["min"] = ctk.CTkLabel(soglie_frame, text="", font=ctk.CTkFont(size=16), text_color="blue")
-            self.boxes[nome]["min"].pack(side="left", padx=(0,10))
-            self.boxes[nome]["max"] = ctk.CTkLabel(soglie_frame, text="", font=ctk.CTkFont(size=16), text_color="red")
-            self.boxes[nome]["max"].pack(side="left", padx=(10,0))
+            # Dot
+            dot = ctk.CTkLabel(card, text="●", font=ctk.CTkFont(size=42), text_color="#6ddb57")
+            dot.pack(pady=(3, 0))
+            self.card_widgets[nome]["dot"] = dot
 
-        self.refresh()
+            temp_lbl = ctk.CTkLabel(card, text="Temp: --°C", font=ctk.CTkFont(size=32, weight="bold"))
+            temp_lbl.pack(pady=(9, 0))
+            self.card_widgets[nome]["temp"] = temp_lbl
+
+            valve_lbl = ctk.CTkLabel(card, text="Valvola: --", font=ctk.CTkFont(size=27))
+            valve_lbl.pack(pady=(6, 0))
+            self.card_widgets[nome]["valve"] = valve_lbl
+
+            min_lbl = ctk.CTkLabel(card, text="Min: --°C", font=ctk.CTkFont(size=22), text_color="blue")
+            min_lbl.pack(side="left", anchor="w", padx=(28, 0), pady=(13, 0))
+            max_lbl = ctk.CTkLabel(card, text="Max: --°C", font=ctk.CTkFont(size=22), text_color="red")
+            max_lbl.pack(side="right", anchor="e", padx=(0, 28), pady=(13, 0))
+            self.card_widgets[nome]["min"] = min_lbl
+            self.card_widgets[nome]["max"] = max_lbl
+
+            lock_lbl = ctk.CTkLabel(card, image=None, text="", width=36)
+            lock_lbl.pack(pady=(0, 2))
+            self.card_widgets[nome]["lock"] = lock_lbl
 
     def refresh(self):
-        for nome, box in self.boxes.items():
-            b = self.botti_data[nome]
-            t = b["temperatura"]
-            if t < b["min_temp"]:
+        # Aggiorna dati di ogni card
+        for nome, widgets in self.card_widgets.items():
+            b = self.app.botti_data[nome]
+            temp = b["temperatura"]
+            widgets["temp"].configure(text=f"Temp: {temp:.1f}°C")
+            widgets["valve"].configure(text=f"Valvola: {b['valvola']}")
+            widgets["min"].configure(text=f"Min: {b['min_temp']:.1f}°C")
+            widgets["max"].configure(text=f"Max: {b['max_temp']:.1f}°C")
+            # Stato dot
+            if temp < b["min_temp"]:
                 color = "#459bed"
-            elif t > b["max_temp"]:
+            elif temp > b["max_temp"]:
                 color = "#ed4747"
             else:
                 color = "#6ddb57"
-            box["dot"].configure(text_color=color)
-            box["temp"].configure(text=f"{t:.1f} °C")
-            stato_valvola = b["valvola"] if b["valvola"] in ("Aperta","Chiusa") else "Chiusa"
-            box["valve"].configure(text=f"Valvola: {stato_valvola}")
-            if b.get("forced") in ("Aperta", "Chiusa"):
-                box["lock"].configure(image=self.lock_icon)
-            else:
-                box["lock"].configure(image=None)
-            box["min"].configure(text=f"Min: {b['min_temp']:.1f}")
-            box["max"].configure(text=f"Max: {b['max_temp']:.1f}")
+            widgets["dot"].configure(text_color=color)
+            # Lucchetto se forzata
+            forced = b.get("forced")
+            try:
+                from PIL import Image
+                if forced in ("Aperta", "Chiusa"):
+                    img = Image.open("assets/lock.png").resize((32, 32))
+                    widgets["lock"].configure(image=ctk.CTkImage(light_image=img, dark_image=img))
+                else:
+                    widgets["lock"].configure(image=None)
+            except Exception:
+                widgets["lock"].configure(image=None)

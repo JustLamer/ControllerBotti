@@ -17,100 +17,127 @@ DELTA_MAP = {
 
 class BarrelTab(ctk.CTkFrame):
     def __init__(self, master, app, nome, **kwargs):
-        super().__init__(master, corner_radius=18, fg_color="#223118", **kwargs)
+        super().__init__(master, corner_radius=22, fg_color="#223118", **kwargs)
         self.app = app
         self.nome = nome
 
         self.grid_columnconfigure(1, weight=1)
 
         left = ctk.CTkFrame(self, fg_color="transparent")
-        left.grid(row=0, column=0, sticky="nsw", padx=8, pady=10)
+        left.grid(row=0, column=0, sticky="nsw", padx=18, pady=18)
 
-        ctk.CTkLabel(left, text=nome, font=ctk.CTkFont(size=25, weight="bold")).pack(pady=(18, 10))
-        self.dot_lbl = ctk.CTkLabel(left, text="●", font=ctk.CTkFont(size=38), text_color="#6ddb57")
+        ctk.CTkLabel(left, text=nome, font=ctk.CTkFont(size=30, weight="bold")).pack(pady=(18, 10))
+        self.dot_lbl = ctk.CTkLabel(left, text="●", font=ctk.CTkFont(size=44), text_color="#6ddb57")
         self.dot_lbl.pack()
-        self.temp_lbl = ctk.CTkLabel(left, text="", font=ctk.CTkFont(size=27, weight="bold"))
-        self.temp_lbl.pack(pady=7)
-        self.valve_lbl = ctk.CTkLabel(left, text="", font=ctk.CTkFont(size=22))
+        self.temp_lbl = ctk.CTkLabel(left, text="", font=ctk.CTkFont(size=31, weight="bold"))
+        self.temp_lbl.pack(pady=10)
+        self.valve_lbl = ctk.CTkLabel(left, text="", font=ctk.CTkFont(size=25))
         self.valve_lbl.pack(pady=7)
 
-        img_lock = Image.open("assets/lock.png").resize((32, 32))
+        img_lock = Image.open("assets/lock.png").resize((36, 36))
         self.lock_icon = ctk.CTkImage(light_image=img_lock, dark_image=img_lock)
-        self.lock_lbl = ctk.CTkLabel(left, image=None, text="", width=36)
+        self.lock_lbl = ctk.CTkLabel(left, image=None, text="", width=40)
         self.lock_lbl.pack(pady=3)
 
-        # ComboBox modalità valvola
+        # Modalità valvola
         self.mode_var = ctk.StringVar()
-        ctk.CTkLabel(left, text="Modalità valvola:", font=ctk.CTkFont(size=17)).pack(pady=(8,2))
+        ctk.CTkLabel(left, text="Modalità valvola:", font=ctk.CTkFont(size=21)).pack(pady=(12,2))
         self.mode_menu = ctk.CTkComboBox(
             left,
             values=["Auto", "Aperta", "Chiusa"],
             variable=self.mode_var,
-            width=140,
-            height=44,
-            font=ctk.CTkFont(size=19),
-            dropdown_font=ctk.CTkFont(size=19),
+            width=146,
+            height=48,
+            font=ctk.CTkFont(size=23),
+            dropdown_font=ctk.CTkFont(size=23),
             command=self.on_mode_selected
         )
-        self.mode_menu.pack(pady=(0, 10))
+        self.mode_menu.pack(pady=(0,13))
 
-        # Step size
-        ctk.CTkLabel(left, text="Step soglia (°C):", font=ctk.CTkFont(size=17)).pack()
+        # Step soglia
+        ctk.CTkLabel(left, text="Step soglia (°C):", font=ctk.CTkFont(size=21)).pack()
         self.step_var = ctk.StringVar(value=str(app.settings.get("step_temp", 0.1)))
         steps = ["0.1", "0.2", "0.5", "1.0"]
         self.step_menu = ctk.CTkComboBox(
-            left,
-            values=steps,
-            variable=self.step_var,
-            width=110,
-            height=44,
-            font=ctk.CTkFont(size=21),
-            dropdown_font=ctk.CTkFont(size=21),
+            left, values=steps, variable=self.step_var,
+            width=115, height=48, font=ctk.CTkFont(size=23),
+            dropdown_font=ctk.CTkFont(size=23),
             command=self.change_step
         )
-        self.step_menu.pack(pady=6)
+        self.step_menu.pack(pady=8)
 
         # Soglie regolabili
-        soglie_frame = ctk.CTkFrame(left, fg_color="#223118", corner_radius=10)
-        soglie_frame.pack(pady=12)
-        ctk.CTkLabel(soglie_frame, text="Soglia Min (°C)", font=ctk.CTkFont(size=19)).grid(row=0, column=0, padx=12, pady=9)
-        self.min_lbl = ctk.CTkLabel(soglie_frame, text="", font=ctk.CTkFont(size=20, weight="bold"), text_color="blue")
+        soglie_frame = ctk.CTkFrame(left, fg_color="#223118", corner_radius=12)
+        soglie_frame.pack(pady=13)
+        ctk.CTkLabel(soglie_frame, text="Min (°C)", font=ctk.CTkFont(size=21)).grid(row=0, column=0, padx=12, pady=9)
+        self.min_lbl = ctk.CTkLabel(soglie_frame, text="", font=ctk.CTkFont(size=23, weight="bold"), text_color="blue")
         self.min_lbl.grid(row=0, column=1, padx=7)
-        ctk.CTkButton(soglie_frame, text="-", width=44, height=44, font=ctk.CTkFont(size=20),
-                      command=lambda: self.modifica_soglia("min_temp", -1)).grid(row=0, column=2, padx=4)
-        ctk.CTkButton(soglie_frame, text="+", width=44, height=44, font=ctk.CTkFont(size=20),
-                      command=lambda: self.modifica_soglia("min_temp", 1)).grid(row=0, column=3, padx=4)
-        ctk.CTkLabel(soglie_frame, text="Soglia Max (°C)", font=ctk.CTkFont(size=19)).grid(row=1, column=0, padx=12, pady=9)
-        self.max_lbl = ctk.CTkLabel(soglie_frame, text="", font=ctk.CTkFont(size=20, weight="bold"), text_color="red")
+        btn_minm = ctk.CTkButton(soglie_frame, text="-", width=46, height=46, font=ctk.CTkFont(size=22),
+                      command=lambda: self._button_feedback(self.modifica_soglia, "min_temp", -1))
+        btn_minm.grid(row=0, column=2, padx=4)
+        btn_minp = ctk.CTkButton(soglie_frame, text="+", width=46, height=46, font=ctk.CTkFont(size=22),
+                      command=lambda: self._button_feedback(self.modifica_soglia, "min_temp", 1))
+        btn_minp.grid(row=0, column=3, padx=4)
+        ctk.CTkLabel(soglie_frame, text="Max (°C)", font=ctk.CTkFont(size=21)).grid(row=1, column=0, padx=12, pady=9)
+        self.max_lbl = ctk.CTkLabel(soglie_frame, text="", font=ctk.CTkFont(size=23, weight="bold"), text_color="red")
         self.max_lbl.grid(row=1, column=1, padx=7)
-        ctk.CTkButton(soglie_frame, text="-", width=44, height=44, font=ctk.CTkFont(size=20),
-                      command=lambda: self.modifica_soglia("max_temp", -1)).grid(row=1, column=2, padx=4)
-        ctk.CTkButton(soglie_frame, text="+", width=44, height=44, font=ctk.CTkFont(size=20),
-                      command=lambda: self.modifica_soglia("max_temp", 1)).grid(row=1, column=3, padx=4)
+        btn_maxm = ctk.CTkButton(soglie_frame, text="-", width=46, height=46, font=ctk.CTkFont(size=22),
+                      command=lambda: self._button_feedback(self.modifica_soglia, "max_temp", -1))
+        btn_maxm.grid(row=1, column=2, padx=4)
+        btn_maxp = ctk.CTkButton(soglie_frame, text="+", width=46, height=46, font=ctk.CTkFont(size=22),
+                      command=lambda: self._button_feedback(self.modifica_soglia, "max_temp", 1))
+        btn_maxp.grid(row=1, column=3, padx=4)
 
         # Intervallo dati
-        ctk.CTkLabel(left, text="Intervallo dati:", font=ctk.CTkFont(size=17)).pack(pady=(15, 2))
+        ctk.CTkLabel(left, text="Intervallo dati:", font=ctk.CTkFont(size=21)).pack(pady=(16, 2))
         self.range_var = ctk.StringVar(value="Ultime 2 ore")
         self.range_menu = ctk.CTkComboBox(
             left,
             values=list(DELTA_MAP.keys()),
             variable=self.range_var,
-            width=165,
-            height=44,
-            font=ctk.CTkFont(size=19),
-            dropdown_font=ctk.CTkFont(size=19)
+            width=170,
+            height=48,
+            font=ctk.CTkFont(size=22),
+            dropdown_font=ctk.CTkFont(size=22),
+            command=lambda _: self.refresh()
         )
-        self.range_menu.pack(pady=(0, 12))
-        self.range_menu.bind("<<ComboboxSelected>>", lambda e: self.refresh())
+        self.range_menu.pack(pady=(0, 15))
 
-        # DESTRA: GRAFICO
+        # Destra: grafico
         right = ctk.CTkFrame(self, fg_color='transparent')
-        right.grid(row=0, column=1, sticky="nsew", padx=8, pady=10)
-        self.fig, self.ax = plt.subplots(figsize=(5.2, 2.6))
+        right.grid(row=0, column=1, sticky="nsew", padx=18, pady=18)
+        self.fig, self.ax = plt.subplots(figsize=(5.6, 2.7))
         self.canvas = FigureCanvasTkAgg(self.fig, master=right)
         self.canvas.get_tk_widget().pack(fill="both", expand=True, padx=0, pady=0)
 
         self.refresh()
+
+    def _button_feedback(self, func, *args):
+        btn = self.focus_get()
+        if btn and isinstance(btn, ctk.CTkButton):
+            orig = btn.cget("fg_color")
+            btn.configure(fg_color="#44c079")
+            self.after(120, lambda: btn.configure(fg_color=orig))
+        func(*args)
+
+    def animate_dot_color(self, target_color, steps=9, duration=180):
+        def hex_to_rgb(hex_color):
+            return tuple(int(hex_color[i:i+2], 16) for i in (1, 3, 5))
+        def rgb_to_hex(rgb):
+            return f'#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}'
+        current = self.dot_lbl.cget("text_color")
+        if not isinstance(current, str) or not current.startswith('#'): current = "#6ddb57"
+        curr_rgb = hex_to_rgb(current)
+        target_rgb = hex_to_rgb(target_color)
+        for step in range(steps+1):
+            ratio = step / steps
+            r = int(curr_rgb[0] + (target_rgb[0] - curr_rgb[0]) * ratio)
+            g = int(curr_rgb[1] + (target_rgb[1] - curr_rgb[1]) * ratio)
+            b = int(curr_rgb[2] + (target_rgb[2] - curr_rgb[2]) * ratio)
+            color = rgb_to_hex((r, g, b))
+            self.dot_lbl.configure(text_color=color)
+            self.update()
+            self.after(duration // steps)
 
     def get_dot_color(self):
         b = self.app.botti_data[self.nome]
@@ -124,10 +151,8 @@ class BarrelTab(ctk.CTkFrame):
     def change_step(self, event=None):
         self.app.settings["step_temp"] = float(self.step_var.get())
 
-    def on_mode_selected(self, event=None):
-        mode = self.mode_var.get()
+    def on_mode_selected(self, mode):
         b = self.app.botti_data[self.nome]
-        print(f"[DEBUG] on_mode_selected {self.nome}: user set mode to {mode}")
         if mode == "Auto":
             b["forced"] = None
         elif mode in ("Aperta", "Chiusa"):
@@ -143,7 +168,6 @@ class BarrelTab(ctk.CTkFrame):
     def refresh(self):
         b = self.app.botti_data[self.nome]
         forced = b.get("forced")
-        print(f"[DEBUG] refresh {self.nome}: forced={forced}, mode_var={self.mode_var.get()}")
         expected = {
             None: "Auto",
             "Aperta": "Aperta",
@@ -151,7 +175,7 @@ class BarrelTab(ctk.CTkFrame):
         }[forced]
         if self.mode_var.get() != expected:
             self.mode_var.set(expected)
-        self.dot_lbl.configure(text_color=self.get_dot_color())
+        self.animate_dot_color(self.get_dot_color())
         self.temp_lbl.configure(text=f"{b['temperatura']} °C")
         self.valve_lbl.configure(text=f"Valvola: {b['valvola']}")
         self.min_lbl.configure(text=f"{b['min_temp']:.1f}")
@@ -159,7 +183,7 @@ class BarrelTab(ctk.CTkFrame):
         show_lock = b.get("forced") in ("Aperta", "Chiusa")
         self.lock_lbl.configure(image=self.lock_icon if show_lock else None)
 
-        # GRAFICO
+        # Grafico
         self.ax.clear()
         temp_history = b.get("history", [])
         now = datetime.datetime.now()
