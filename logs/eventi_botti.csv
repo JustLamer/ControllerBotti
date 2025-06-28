@@ -1,0 +1,18 @@
+2025-06-28T08:55:04.303702,CambioValvola,Botte 1,Chiusa -> Chiusa
+2025-06-28T08:55:04.305701,CambioValvola,Botte 2,Chiusa -> Chiusa
+2025-06-28T08:55:04.306692,CambioValvola,Botte 3,Chiusa -> Chiusa
+2025-06-28T08:55:10.625015,CambioValvola,Botte 3,Chiusa -> Aperta
+2025-06-28T08:55:54.590679,CambioValvola,Botte 3,Aperta -> Chiusa
+2025-06-28T09:00:57.173501,CambioValvola,Botte 1,Chiusa -> Chiusa
+2025-06-28T09:00:57.174514,CambioValvola,Botte 2,Chiusa -> Chiusa
+2025-06-28T09:00:57.175492,CambioValvola,Botte 3,Chiusa -> Chiusa
+2025-06-28T09:04:25.348247,CambioValvola,Botte 3,Chiusa -> Aperta
+2025-06-28T09:04:43.997337,CambioModalità,Botte 1,Da None a Aperta
+2025-06-28T09:04:44.030614,CambioValvola,Botte 1,Chiusa -> Aperta
+2025-06-28T09:04:52.506633,CambioModalità,Botte 1,Da Aperta a None
+2025-06-28T09:05:10.981092,CambioModalità,Botte 1,Da None a Chiusa
+2025-06-28T09:05:11.847922,CambioValvola,Botte 1,Aperta -> Chiusa
+2025-06-28T09:05:17.489579,CambioModalità,Botte 1,Da Chiusa a None
+2025-06-28T09:06:45.702625,CambioValvola,Botte 1,Chiusa -> Aperta
+2025-06-28T09:07:16.498705,CambioModalità,Botte 1,Da None a Chiusa
+2025-06-28T09:07:18.257883,CambioValvola,Botte 1,Aperta -> Chiusa

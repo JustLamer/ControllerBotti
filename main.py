@@ -5,6 +5,7 @@ from gui.overview import OverviewFrame
 from gui.barrel_tab import BarrelTab
 from config import load_config, save_config
 from styles import setup_styles
+from utils.logger import log_botte_csv
 import os
 
 ctk.set_appearance_mode("dark")
@@ -21,11 +22,13 @@ class ModernWineApp(ctk.CTk):
         # --- Dati/Config ---
         self.botti_data, self.settings = load_config()
         import datetime
-        # Inizializza history se non presente
+        # Inizializza history e valve_history se non presenti
         for b in self.botti_data.values():
+            now = datetime.datetime.now()
             if "history" not in b:
-                now = datetime.datetime.now()
                 b["history"] = [(now - datetime.timedelta(minutes=(19-i)*2), b["temperatura"]) for i in range(20)]
+            if "valve_history" not in b:
+                b["valve_history"] = []
             if "forced" not in b:
                 b["forced"] = None
             if "valvola" not in b or b["valvola"] not in ("Aperta", "Chiusa"):
@@ -67,14 +70,16 @@ class ModernWineApp(ctk.CTk):
 
     def periodic_update(self):
         import random, datetime
+
+        now = datetime.datetime.now()
         for nome, b in self.botti_data.items():
             # Simulazione aggiornamento storico e temperatura
             nuova_temp = round(b["temperatura"] + random.uniform(-0.2, 0.2), 1)
             b["temperatura"] = nuova_temp
-            now = datetime.datetime.now()
-            b["history"].append((now, nuova_temp))
-            b["history"] = b["history"][-50:]  # Tieni ultimi 50 punti
-            # Logica valvola con isteresi/forzatura (mai 'Auto')
+            b.setdefault("history", []).append((now, nuova_temp))
+            b["history"] = b["history"][-100:]
+
+            # Logica valvola
             if b.get("forced", None) in ("Aperta", "Chiusa"):
                 b["valvola"] = b["forced"]
             else:
@@ -84,7 +89,22 @@ class ModernWineApp(ctk.CTk):
                     b["valvola"] = "Chiusa"
                 else:
                     if b.get("valvola") not in ("Aperta", "Chiusa"):
-                        b["valvola"] = "Chiusa"  # Default
+                        b["valvola"] = "Chiusa"
+
+            # --- LOGGA SEMPRE LO STATO ---
+            b.setdefault("valve_history", []).append((now, b["valvola"]))
+            b["valve_history"] = b["valve_history"][-100:]
+
+            # LOG CSV COMPLETO
+            log_botte_csv(
+                nome_botte=nome,
+                timestamp=now,
+                temperatura=b["temperatura"],
+                min_temp=b["min_temp"],
+                max_temp=b["max_temp"],
+                valvola=b["valvola"]
+            )
+
         # Aggiorna UI
         for page in self.pages.values():
             if hasattr(page, "refresh"):

@@ -30,7 +30,6 @@ class Sidebar(ctk.CTkFrame):
             self.btns[label] = btn
 
     def _on_tab_click(self, label):
-        # Animazione "zoom" su pressione
         btn = self.btns[label]
         btn.configure(font=ctk.CTkFont(size=27, weight="bold"))
         self.after(130, lambda: btn.configure(font=ctk.CTkFont(size=23, weight="bold")))

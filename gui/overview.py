@@ -49,7 +49,6 @@ class OverviewFrame(ctk.CTkFrame):
             self.card_widgets[nome]["lock"] = lock_lbl
 
     def refresh(self):
-        # Aggiorna dati di ogni card
         for nome, widgets in self.card_widgets.items():
             b = self.app.botti_data[nome]
             temp = b["temperatura"]
@@ -57,7 +56,6 @@ class OverviewFrame(ctk.CTkFrame):
             widgets["valve"].configure(text=f"Valvola: {b['valvola']}")
             widgets["min"].configure(text=f"Min: {b['min_temp']:.1f}°C")
             widgets["max"].configure(text=f"Max: {b['max_temp']:.1f}°C")
-            # Stato dot
             if temp < b["min_temp"]:
                 color = "#459bed"
             elif temp > b["max_temp"]:
@@ -65,7 +63,6 @@ class OverviewFrame(ctk.CTkFrame):
             else:
                 color = "#6ddb57"
             widgets["dot"].configure(text_color=color)
-            # Lucchetto se forzata
             forced = b.get("forced")
             try:
                 from PIL import Image
