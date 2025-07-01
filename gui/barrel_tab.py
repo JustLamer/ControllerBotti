@@ -119,10 +119,11 @@ class BarrelTab(ctk.CTkFrame):
         )
         self.step_menu.grid(row=0, column=9, padx=2)
 
-        # Grafico (più piccolo)
+        # Grafico (allargato)
         right = ctk.CTkFrame(self, fg_color='transparent')
         right.grid(row=3, column=0, sticky="nsew", padx=3, pady=5)
-        self.fig, self.ax = plt.subplots(figsize=(3.9, 1.6))
+        # Nuove dimensioni: larghezza +40%, altezza +20%
+        self.fig, self.ax = plt.subplots(figsize=(5.5, 1.92))
         self.canvas = FigureCanvasTkAgg(self.fig, master=right)
         self.canvas.get_tk_widget().pack(fill="both", expand=True, padx=0, pady=0)
 
@@ -235,7 +236,7 @@ class BarrelTab(ctk.CTkFrame):
         if data:
             x = [t for t, v in data]
             y = [v for t, v in data]
-            self.ax.plot(x, y, marker='o', color='#50bcdf', label="Temperatura")
+            self.ax.plot(x, y, marker='o',markersize=2, color='#50bcdf', label="Temperatura")
             self.ax.axhline(b['min_temp'], color='blue', linestyle='--', label='Min')
             self.ax.axhline(b['max_temp'], color='red', linestyle='--', label='Max')
             opens = [t for t, v in vdata if v == "Aperta"]
