@@ -20,7 +20,7 @@ class OverviewFrame(ctk.CTkFrame):
 
         center_frame = ctk.CTkFrame(self, fg_color="transparent")
         center_frame.grid(row=0, column=0, padx=5, pady=10, sticky="nsew")
-        center_frame.grid_columnconfigure((0, 1, 2), weight=1)
+        center_frame.grid_columnconfigure((0, 1, 2), weight=0)
         center_frame.grid_rowconfigure(0, weight=1)
 
         self.botte_widgets = {}
@@ -29,7 +29,7 @@ class OverviewFrame(ctk.CTkFrame):
 
             # Frame bordo verde scuro (più piccolo)
             bg_frame = ctk.CTkFrame(center_frame, width=FRAME_W, height=FRAME_H, corner_radius=20, fg_color="#232a20")
-            bg_frame.grid(row=0, column=idx, padx=7, pady=4, sticky="n")
+            bg_frame.grid(row=0, column=idx, padx=2, pady=2, sticky="n")
             bg_frame.grid_propagate(False)
 
             # Immagine barrel
