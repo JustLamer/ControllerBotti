@@ -120,7 +120,10 @@ class OverviewFrame(ctk.CTkFrame):
 
             # Mostra lucchetto se forzata
             show_lock = b.get("forced") in ("Aperta", "Chiusa")
+            print(f"[DEBUG][Overview] {nome}: forced={b.get('forced')} → show_lock={show_lock}")
             if show_lock:
                 widgets["lock"].configure(image=widgets["lock_icon"])
+                widgets["lock"].place(relx=0.5, rely=0.50, anchor="center")
             else:
                 widgets["lock"].configure(image=None)
+                widgets["lock"].place_forget()
