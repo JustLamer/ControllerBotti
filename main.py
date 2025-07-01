@@ -16,8 +16,10 @@ class ModernWineApp(ctk.CTk):
         super().__init__()
         self.title("Controllo Botti - Modern UI")
         self.geometry("1200x800")
-        self.minsize(950, 600)
+        self.minsize(300, 150)
         setup_styles(self)
+        self.wm_attributes("-fullscreen", True)  # Make window full screen
+        self.state("normal")
 
         # --- Dati/Config ---
         self.botti_data, self.settings = load_config()

@@ -123,7 +123,7 @@ class BarrelTab(ctk.CTkFrame):
         right = ctk.CTkFrame(self, fg_color='transparent')
         right.grid(row=3, column=0, sticky="nsew", padx=3, pady=5)
         # Nuove dimensioni: larghezza +40%, altezza +20%
-        self.fig, self.ax = plt.subplots(figsize=(6, 3))
+        self.fig, self.ax = plt.subplots(figsize=(6, 2.8))
         self.canvas = FigureCanvasTkAgg(self.fig, master=right)
         self.canvas.get_tk_widget().pack(fill="both", expand=True, padx=0, pady=0)
 
