@@ -1,12 +1,12 @@
-# --- Runtime dependencies ---
-customtkinter==5.2.2       # GUI framework for modern Tkinter widgets:contentReference[oaicite:17]{index=17}
-Pillow==11.3.0             # Imaging library (PIL fork) for image processing:contentReference[oaicite:18]{index=18}
-matplotlib==3.10.3         # Plotting library for graphs (requires numpy):contentReference[oaicite:19]{index=19}
-numpy==2.3.1               # Fundamental package for array computing (matplotlib dependency):contentReference[oaicite:20]{index=20}
-w1thermsensor==2.3.0       # 1-Wire temperature sensor support (DS18B20):contentReference[oaicite:21]{index=21}
-RPi.GPIO==0.7.1            # Raspberry Pi GPIO control library for hardware I/O:contentReference[oaicite:22]{index=22}
+# Runtime dependencies
+customtkinter>=5.2.0
+Pillow>=9.0.0
+matplotlib>=3.7,<3.11
+numpy>=1.22.0
+w1thermsensor>=2.3.0
+RPi.GPIO>=0.7.0
 
-# --- Development and testing dependencies ---
-pytest==8.4.1              # Testing framework for unit tests:contentReference[oaicite:23]{index=23}
-flake8==7.3.0              # Linting for code style and quality checks:contentReference[oaicite:24]{index=24}
-black==25.1.0              # Code formatter for consistent style:contentReference[oaicite:25]{index=25}
+# Development and testing dependencies
+pytest>=7.0.0
+flake8>=5.0.0
+black>=22.0
