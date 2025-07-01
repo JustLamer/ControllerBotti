@@ -164,6 +164,8 @@ class BarrelTab(ctk.CTkFrame):
 
     def on_mode_selected(self, mode):
         b = self.app.botti_data[self.nome]
+        print(f"[DEBUG] on_mode_selected chiamata con mode={mode}")
+        print(f"[DEBUG] Prima del cambio, forced={b['forced']}")
         old_forced = b.get("forced")
         if mode == "Auto":
             b["forced"] = None
@@ -172,6 +174,7 @@ class BarrelTab(ctk.CTkFrame):
         save_config(self.app.botti_data, self.app.settings)
         if old_forced != b["forced"]:
             log_event("CambioModalità", self.nome, f"Da {old_forced} a {b['forced']}")
+        print(f"[DEBUG] Dopo il cambio, forced={b['forced']}")
 
     def modifica_soglia(self, tipo, delta):
         step = float(self.app.settings.get("step_temp", 0.1))
@@ -189,6 +192,7 @@ class BarrelTab(ctk.CTkFrame):
 
     def refresh(self):
         b = self.app.botti_data[self.nome]
+        print(f"[DEBUG] refresh chiamato. forced={b['forced']}")
         forced = b.get("forced")
         expected = {
             None: "Auto",
@@ -204,6 +208,13 @@ class BarrelTab(ctk.CTkFrame):
         self.max_lbl.configure(text=f"{b['max_temp']:.1f}")
         show_lock = b.get("forced") in ("Aperta", "Chiusa")
         self.lock_lbl.configure(image=self.lock_icon if show_lock else None)
+
+        if b["forced"]:
+            print(f"[DEBUG] Mostro il lucchetto, forced={b['forced']}")
+            self.lock_lbl.grid(row=0, column=0)
+        else:
+            print(f"[DEBUG] Nascondo il lucchetto, forced={b['forced']}")
+            self.lock_lbl.grid_remove()
 
         # --- GRAFICO ---
         temp_history = b.get("history", [])
