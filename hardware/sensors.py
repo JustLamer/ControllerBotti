@@ -85,7 +85,7 @@ class SensorManager:
             return round(18 + random.uniform(-1.5, 1.5), 1)
 
         try:
-            sensor = W1ThermSensor(W1ThermSensor.THERM_SENSOR_DS18B20, serial)
+            sensor = W1ThermSensor(sensor_id=serial)
             return round(sensor.get_temperature(), 1)
         except Exception as e:
             print(f"[ERROR] Errore lettura serial {serial}: {e}, uso mock.")
