@@ -11,6 +11,7 @@ from styles import setup_styles
 from utils.logger import log_botte_csv
 from hardware.sensors import SensorManager
 from gui.settings_tab import SettingsTab
+from hardware.actuators import Actuator
 
 import os
 
@@ -48,6 +49,8 @@ class ModernWineApp(ctk.CTk):
                 b["forced"] = None
             if "valvola" not in b or b["valvola"] not in ("Aperta", "Chiusa"):
                 b["valvola"] = "Chiusa"
+
+        self.actuators = {nome: Actuator(nome) for nome in self.botti_data}
 
         # --- Icone ---
         gear_icon_path = os.path.join("assets", "gear.png")
@@ -92,9 +95,7 @@ class ModernWineApp(ctk.CTk):
         import random, datetime
         now = datetime.datetime.now()
         for nome, b in self.botti_data.items():
-            nuova_temp = round(b["temperatura"] + random.uniform(-0.2, 0.2), 1)
-            b["temperatura"] = nuova_temp
-            b.setdefault("history", []).append((now, nuova_temp))
+            b.setdefault("history", []).append((now, b["temperatura"]))
             b["history"] = b["history"][-100:]
 
             if b.get("forced", None) in ("Aperta", "Chiusa"):
@@ -110,6 +111,8 @@ class ModernWineApp(ctk.CTk):
 
             b.setdefault("valve_history", []).append((now, b["valvola"]))
             b["valve_history"] = b["valve_history"][-100:]
+
+            self.actuators[nome].set_valve(b["valvola"])
 
             log_botte_csv(
                 nome_botte=nome,
