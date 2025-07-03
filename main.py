@@ -6,6 +6,8 @@ from gui.barrel_tab import BarrelTab
 from config import load_config, save_config
 from styles import setup_styles
 from utils.logger import log_botte_csv
+from hardware.sensors import SensorManager
+from gui.settings_tab import SettingsTab
 import os
 
 ctk.set_appearance_mode("dark")
@@ -37,22 +39,30 @@ class ModernWineApp(ctk.CTk):
                 b["valvola"] = "Chiusa"
 
         # --- Icone ---
+        gear_icon_path = os.path.join("assets", "gear.png")
+        self.gear_img = ctk.CTkImage(light_image=Image.open(gear_icon_path), dark_image=Image.open(gear_icon_path),
+                                     size=(44, 44))
         barrel_icon_path = os.path.join("assets", "barrel.png")
         self.barrel_img = ctk.CTkImage(light_image=Image.open(barrel_icon_path),
                                        dark_image=Image.open(barrel_icon_path),
                                        size=(48, 48))
         # --- Sidebar ---
-        tab_list = [("Panoramica", self.barrel_img)] + [
-            (nome, self.barrel_img) for nome in self.botti_data
-        ]
+        tab_list = [("Panoramica", self.barrel_img)] + \
+                   [(nome, self.barrel_img) for nome in self.botti_data] + \
+                   [("Impostazioni", self.gear_img)]
+
         self.sidebar = Sidebar(self, tab_list, self.switch_tab)
         self.sidebar.grid(row=0, column=0, sticky="ns")
 
         # --- Main Area ---
+        self.sensor_manager = SensorManager()
+        sensor_mapping = self.settings.get('sensors_mapping', {})
+        self.sensor_manager = SensorManager(mapping=sensor_mapping)
         self.pages = {}
         self.pages["Panoramica"] = OverviewFrame(self, self)
         for nome in self.botti_data:
             self.pages[nome] = BarrelTab(self, self, nome)
+        self.pages["Impostazioni"] = SettingsTab(self, self.sensor_manager, self.on_mapping_change)
         self.current_tab = None
         self.switch_tab("Panoramica")
 
@@ -62,6 +72,12 @@ class ModernWineApp(ctk.CTk):
 
         # Loop di aggiornamento dati periodico
         self.after(2000, self.periodic_update)
+
+    def on_mapping_change(self):
+        # (Opzionale) qui puoi salvare su file la nuova associazione sensore-botte
+        # Esempio: scrivi self.sensor_manager.get_serials() su config
+        save_config(self.botti_data, self.settings)
+        pass
 
     def switch_tab(self, tab_name):
         if self.current_tab:

@@ -154,8 +154,14 @@ class BarrelTab(ctk.CTkFrame):
             g = int(curr_rgb[1] + (target_rgb[1] - curr_rgb[1]) * ratio)
             b = int(curr_rgb[2] + (target_rgb[2] - curr_rgb[2]) * ratio)
             color = rgb_to_hex((r, g, b))
-            self.dot_lbl.configure(text_color=color)
-            self.update()
+            # --- AGGIUNGI QUESTO CONTROLLO ---
+            try:
+                if self.dot_lbl.winfo_exists():
+                    self.dot_lbl.configure(text_color=color)
+                    self.update()
+            except Exception as e:
+                # Widget non più valido, interrompi
+                break
             self.after(duration // steps)
 
     def get_dot_color(self):
