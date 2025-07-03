@@ -85,6 +85,7 @@ class SensorManager:
     def rescan_serials(self):
         """Aggiorna la lista dei serial disponibili sul bus 1-Wire"""
         self.detected_serials = discover_all_ds18b20()
+        print("DEBUG: Sensori trovati nel rescan:", self.detected_serials)
         return self.detected_serials
 
 # --- Esempio standalone ---
