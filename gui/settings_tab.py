@@ -13,7 +13,7 @@ class SettingsTab(ctk.CTkFrame):
         ctk.CTkLabel(self, text="Associa ogni botte a una sonda:", font=ctk.CTkFont(size=19, weight="bold")).grid(
             row=0, column=0, columnspan=3, pady=18, padx=10, sticky="w")
 
-        serials = self.sensor_manager.detected_serials or [""]  # "" per opzione "nessuna sonda"
+        serials = self.sensor_manager.rescan_serials() or [""]
         botti = list(self.master.botti_data.keys())
 
         for i, botte in enumerate(botti):
@@ -36,6 +36,23 @@ class SettingsTab(ctk.CTkFrame):
             if sid:
                 ctk.CTkLabel(self, text=sid, font=ctk.CTkFont(size=13), text_color="#94bfb6").grid(
                     row=offset+1+j, column=0, columnspan=2, sticky="w", padx=30)
+
+        refresh_button = ctk.CTkButton(
+            self, text="🔄 Rileva sensori", font=ctk.CTkFont(size=14),
+            command=self.refresh_sensor_list
+        )
+        refresh_button.grid(row=offset + len(serials) + 2, column=0, pady=(30, 10), padx=10, sticky="w")
+
+    def refresh_sensor_list(self):
+        serials = self.sensor_manager.rescan_serials() or [""]
+        # Aggiorna tutte le combo box
+        for botte, var in self.combo_vars.items():
+            current_value = var.get()
+            combo_box = var._variable._tk.globalgetvar(var._name)  # workaround
+            var.set(current_value if current_value in serials else "")
+            # You may need to recreate combo boxes if they can't update values dynamically
+        # TODO: Ricostruire la GUI o le combo se serve
+        print("Sonde aggiornate:", serials)
 
     def change_assoc(self, botte, var):
         new_serial = var.get() if var.get() else None

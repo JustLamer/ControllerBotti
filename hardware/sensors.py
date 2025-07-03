@@ -18,6 +18,8 @@ class Sensor:
             self.sensor_obj = self._find_sensor()
         # fallback: mock
 
+
+
     def _find_sensor(self):
         try:
             if self.serial:
@@ -55,6 +57,8 @@ def discover_all_ds18b20():
     except Exception:
         return []
 
+
+
 class SensorManager:
     def __init__(self, mapping=None):
         """
@@ -77,6 +81,11 @@ class SensorManager:
     def print_mapping(self):
         for name, sensor in self.sensors.items():
             print(f"{name}: serial={sensor.serial}")
+
+    def rescan_serials(self):
+        """Aggiorna la lista dei serial disponibili sul bus 1-Wire"""
+        self.detected_serials = discover_all_ds18b20()
+        return self.detected_serials
 
 # --- Esempio standalone ---
 if __name__ == "__main__":
