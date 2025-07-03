@@ -1,5 +1,7 @@
 import customtkinter as ctk
 from PIL import Image
+from numpy.random import random
+
 
 class OverviewFrame(ctk.CTkFrame):
     def __init__(self, master, app, **kwargs):
@@ -106,7 +108,13 @@ class OverviewFrame(ctk.CTkFrame):
     def refresh(self):
         for nome, b in self.app.botti_data.items():
             widgets = self.botte_widgets[nome]
-            temp = b["temperatura"]
+
+            # Nuova logica: ottieni temperatura da SensorManager
+            serial = self.app.settings.get("sensors_mapping", {}).get(nome, "test")
+            temp = self.app.sensor_manager.read_temperature_by_serial(serial)
+
+            b["temperatura"] = temp
+
             if temp < b["min_temp"]:
                 widgets["dot"].configure(text_color="#459bed")
             elif temp > b["max_temp"]:
@@ -118,7 +126,6 @@ class OverviewFrame(ctk.CTkFrame):
             widgets["min"].configure(text=f"{b['min_temp']:.1f}")
             widgets["max"].configure(text=f"{b['max_temp']:.1f}")
 
-            # Mostra lucchetto se forzata
             show_lock = b.get("forced") in ("Aperta", "Chiusa")
             if show_lock:
                 widgets["lock"].configure(image=widgets["lock_icon"])

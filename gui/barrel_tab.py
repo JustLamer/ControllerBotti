@@ -203,6 +203,7 @@ class BarrelTab(ctk.CTkFrame):
 
     def refresh(self):
         b = self.app.botti_data[self.nome]
+
         if hasattr(self, 'temp_lbl') and self.temp_lbl.winfo_exists():
             self.temp_lbl.configure(text=f"{b['temperatura']} °C")
         forced = b.get("forced")

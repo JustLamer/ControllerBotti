@@ -80,6 +80,18 @@ class SensorManager:
         print("DEBUG: Sensori trovati nel rescan:", self.detected_serials)
         return self.detected_serials
 
+    def read_temperature_by_serial(self, serial):
+        if serial == "test" or not serial:
+            return round(18 + random.uniform(-1.5, 1.5), 1)
+
+        try:
+            sensor = W1ThermSensor(W1ThermSensor.THERM_SENSOR_DS18B20, serial)
+            return round(sensor.get_temperature(), 1)
+        except Exception as e:
+            print(f"[ERROR] Errore lettura serial {serial}: {e}, uso mock.")
+            return round(18 + random.uniform(-1.5, 1.5), 1)
+
+
 
 if __name__ == "__main__":
     print("Serial DS18B20 rilevati:", discover_all_ds18b20())
