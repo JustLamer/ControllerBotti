@@ -1,6 +1,6 @@
+
 import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append("/home/tritecc/controller")
 
 import customtkinter as ctk
 from PIL import Image
