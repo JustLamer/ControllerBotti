@@ -21,6 +21,10 @@ class SettingsTab(ctk.CTkFrame):
             row=0, column=0, columnspan=3, pady=18, padx=10, sticky="w")
 
         serials = self.sensor_manager.rescan_serials() or [""]
+        if "test" not in serials:
+            serials.insert(0, "test")
+        if not serials:
+            serials = [""]
         botti = list(self.master.botti_data.keys())
 
         for i, botte in enumerate(botti):
