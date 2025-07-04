@@ -1,11 +1,32 @@
 import os
 import random
 
+USE_MOCK_SENSOR = os.environ.get("USE_MOCK_SENSOR", "0") == "1"
+
 try:
-    from w1thermsensor import W1ThermSensor, SensorNotReadyError
-    IS_HARDWARE = True
-except ImportError:
+    if not USE_MOCK_SENSOR:
+        from w1thermsensor import W1ThermSensor, SensorNotReadyError
+        # Try to load once to verify kernel modules
+        W1ThermSensor.get_available_sensors()
+        IS_HARDWARE = True
+    else:
+        raise ImportError("Mocking forced via USE_MOCK_SENSOR")
+except Exception as e:
+    print(f"[INFO] Using mock sensors ({e})")
     IS_HARDWARE = False
+    # Define dummy classes
+    class W1ThermSensor:
+        THERM_SENSOR_DS18B20 = "DS18B20"
+        def __init__(self, sensor_type=THERM_SENSOR_DS18B20, sensor_id=None):
+            self.id = sensor_id or f"28-{random.randint(100000, 999999)}"
+        def get_temperature(self):
+            return 18 + random.uniform(-1.5, 1.5)
+        @staticmethod
+        def get_available_sensors():
+            return [W1ThermSensor() for _ in range(3)]
+
+    class SensorNotReadyError(Exception):
+        pass
 
 
 class Sensor:
@@ -42,10 +63,7 @@ class Sensor:
         return f"<Sensor name={self.name}, serial={self.serial}>"
 
 
-# --- Funzione di rilevamento serial diretta ---
 def discover_all_ds18b20():
-    if not IS_HARDWARE:
-        return []
     try:
         return [s.id for s in W1ThermSensor.get_available_sensors()]
     except Exception:
@@ -90,7 +108,6 @@ class SensorManager:
         except Exception as e:
             print(f"[ERROR] Errore lettura serial {serial}: {e}, uso mock.")
             return round(18 + random.uniform(-1.5, 1.5), 1)
-
 
 
 if __name__ == "__main__":
