@@ -1,7 +1,14 @@
 import os
+import sys
 import random
 
-USE_MOCK_SENSOR = os.environ.get("USE_MOCK_SENSOR", "0") == "1"
+USE_MOCK_SENSOR = (
+    os.environ.get("USE_MOCK_SENSOR", "0") == "1" or
+    "--mock" in sys.argv
+)
+
+if "--mock" in sys.argv:
+    sys.argv.remove("--mock")  # optional, for clean CLI parsing later
 
 try:
     if not USE_MOCK_SENSOR:
@@ -23,7 +30,7 @@ except Exception as e:
             return 18 + random.uniform(-1.5, 1.5)
         @staticmethod
         def get_available_sensors():
-            return [W1ThermSensor() for _ in range(3)]
+            return [W1ThermSensor(sensor_id=f"Fake_Thermo{i+1}") for i in range(3)]
 
     class SensorNotReadyError(Exception):
         pass

@@ -4,6 +4,7 @@ matplotlib>=3.7,<3.11
 numpy>=1.22.0
 w1thermsensor>=2.3.0
 RPi.GPIO>=0.7.0
+pyserial>=3.5
 
 # Development and testing dependencies
 pytest>=7.0.0

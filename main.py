@@ -1,5 +1,5 @@
 import sys
-sys.path.append("/home/tritecc/controller")
+sys.path.append("/home/artonext/tritecc/controller")
 
 import customtkinter as ctk
 from PIL import Image
