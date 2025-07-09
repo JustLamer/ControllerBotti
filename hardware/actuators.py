@@ -1,66 +1,38 @@
 from .pinmap import BARREL_PINMAP
-import serial
-import serial.serialutil  # for SerialException
+import requests
 
 class Actuator:
-    serial_port = None  # variabile di classe per la connessione RS485
-    serial_available = True  # flag per sapere se la seriale è attiva
+    BASE_URL = "http://192.168.4.1"
+    wifi_available = True
 
     def __init__(self, barrel_name):
         self.name = barrel_name
-        self.channel = BARREL_PINMAP[barrel_name]["valve_pin"]  # usa valve_pin come numero canale
-        self.last_state = "Chiusa"  # inizialmente valvola chiusa (NC)
-
-        if Actuator.serial_port is None:
-            try:
-                Actuator.serial_port = serial.Serial('/dev/ttyUSB0', baudrate=115200, timeout=1)
-                #Actuator.serial_port.write(b'ALL_OFF\n')
-                Actuator.serial_port.flush()
-            except serial.serialutil.SerialException as e:
-                print(f"[WARNING] Serial port not available: {e}")
-                Actuator.serial_port = None
-                Actuator.serial_available = False
+        self.channel = BARREL_PINMAP[barrel_name]["valve_pin"]  # 0–5 → usati come 1–6
+        self.last_state = "Chiusa"
 
     def set_valve(self, state):
         if state not in ("Aperta", "Chiusa"):
             return
-        if not Actuator.serial_available:
-            print(f"[DEBUG] Skipping valve control for {self.name} (no serial connection)")
+        if not Actuator.wifi_available:
+            print(f"[DEBUG] Skipping valve control for {self.name} (Wi-Fi not available)")
             return
 
-        relay_address = self.channel  # int tra 0 e 5
-        device_address = 0x06
-        function_code = 0x05
-        output_address = relay_address.to_bytes(2, byteorder='big')
-        output_value = b'\xFF\x00' if state == "Aperta" else b'\x00\x00'
-        message = bytes([device_address, function_code]) + output_address + output_value
-        crc = Actuator.calculate_crc(message)
-        full_message = message + crc
+        relay_channel = self.channel + 1  # converti da 0–5 a 1–6
+        relay_state = 1 if state == "Aperta" else 0
 
-        print(f"[DEBUG] Comando in esadecimale: {full_message.hex()}")
-        Actuator.serial_port.write(full_message)
-        Actuator.serial_port.flush()
-        self.last_state = state
-        print(f"[DEBUG] Sent command to set {self.name} to {state}")
+        url = f"{Actuator.BASE_URL}/relay?ch={relay_channel}&on={relay_state}"
 
-        resp = Actuator.serial_port.read(8)
-        print(f"[DEBUG] Risposta relay: {resp.hex()}")
-
-    @staticmethod
-    def calculate_crc(data):
-        crc = 0xFFFF
-        for pos in data:
-            crc ^= pos
-            for _ in range(8):
-                if (crc & 0x0001):
-                    crc >>= 1
-                    crc ^= 0xA001
-                else:
-                    crc >>= 1
-        return crc.to_bytes(2, byteorder='little')
+        print(f"[DEBUG] Sending request: {url}")
+        try:
+            response = requests.get(url, timeout=2)
+            if response.status_code == 200:
+                print(f"[DEBUG] Set {self.name} to {state} → OK")
+                self.last_state = state
+            else:
+                print(f"[WARNING] Failed to set {self.name} (HTTP {response.status_code})")
+        except requests.exceptions.RequestException as e:
+            print(f"[WARNING] Wi-Fi communication failed: {e}")
+            Actuator.wifi_available = False
 
     def __repr__(self):
         return f"<Actuator name={self.name}, pin={self.channel}>"
-
-
-
