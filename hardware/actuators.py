@@ -13,7 +13,7 @@ class Actuator:
 
         if Actuator.serial_port is None:
             try:
-                Actuator.serial_port = serial.Serial('/dev/ttyUSB0', baudrate=115200, timeout=1)
+                Actuator.serial_port = serial.Serial('/dev/ttyUSB0', baudrate=9600, timeout=1)
                 Actuator.serial_port.write(b'ALL_OFF\n')
                 Actuator.serial_port.flush()
             except serial.serialutil.SerialException as e:
@@ -22,23 +22,45 @@ class Actuator:
                 Actuator.serial_available = False
 
     def set_valve(self, state):
-        # state è "Aperta" o "Chiusa"
-        print(f"[DEBUG] set_valve called for {self.name}: requested state='{state}', last state='{self.last_state}'")
         if state not in ("Aperta", "Chiusa"):
-            return  # ignora stati non validi
+            print(f"[DEBUG] set_valve called for {self.name}: requested state='{state}', last state='{self.last_state}'")
+            return
         if not Actuator.serial_available:
             print(f"[DEBUG] Skipping valve control for {self.name} (no serial connection)")
             return
-        if state == "Aperta" and self.last_state != "Aperta":
-            cmd = f"CH{self.channel}\n".encode()
-            Actuator.serial_port.write(cmd)
-            Actuator.serial_port.flush()
-            self.last_state = "Aperta"
-        elif state == "Chiusa" and self.last_state != "Chiusa":
-            cmd = f"CH{self.channel}\n".encode()
-            Actuator.serial_port.write(cmd)
-            Actuator.serial_port.flush()
-            self.last_state = "Chiusa"
+
+        relay_address = self.channel  # Assicurati che self.channel sia corretto
+        device_address = 0x06
+        function_code = 0x05
+        output_address = relay_address.to_bytes(2, byteorder='big')
+        if state == "Aperta":
+            output_value = b'\xFF\x00'
+        else:
+            output_value = b'\x00\x00'
+
+        message = bytes([device_address, function_code]) + output_address + output_value
+        crc = self.calculate_crc(message)
+        full_message = message + crc
+
+        Actuator.serial_port.write(full_message)
+        Actuator.serial_port.flush()
+        self.last_state = state
+        print(f"[DEBUG] Sent command to set {self.name} to {state}")
+
+    def calculate_crc(data):
+        crc = 0xFFFF
+        for pos in data:
+            crc ^= pos
+            for _ in range(8):
+                if (crc & 0x0001):
+                    crc >>= 1
+                    crc ^= 0xA001
+                else:
+                    crc >>= 1
+        return crc.to_bytes(2, byteorder='little')
 
     def __repr__(self):
         return f"<Actuator name={self.name}, pin={self.channel}>"
+
+
+
