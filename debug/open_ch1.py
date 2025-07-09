@@ -12,7 +12,7 @@ ser = serial.Serial(
 )
 
 # Comando per toggle CH1 (da tua tabella)
-command = bytes.fromhex('06 05 00 01 55 00 A2 ED')
+command = bytes.fromhex('06 05 00 FF FF 00 BD BD')
 
 # Invia il comando
 ser.write(command)
