@@ -40,6 +40,10 @@ class Actuator:
             print(f"[DEBUG] Skipping {self.name} (Wi-Fi non disponibile)")
             return
 
+        if self.channel not in Actuator.relay_states:
+            print(f"[DEBUG] Stato relè per {self.name} non presente, forzo sync...")
+            Actuator.update_states()
+
         current = self.get_current_state()
         print(f"[DEBUG] Richiesta per {self.name}: voglio '{state}', attualmente è '{current}'")
 
