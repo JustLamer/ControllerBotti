@@ -18,8 +18,11 @@ class Actuator:
             if r.status_code == 200:
                 raw = r.json()
                 print(f"[DEBUG] Stato da /getData: {raw}")
+                # Non aggiornare lo stato se già presente: evitiamo toggle inutili
                 for i in range(min(len(raw), 6)):
-                    Actuator.relay_states[i] = "Chiusa" if raw[i] == "0" else "Aperta"
+                    stato_letto = "Aperta" if raw[i] == "1" else "Chiusa"
+                    if Actuator.relay_states.get(i) != stato_letto:
+                        Actuator.relay_states[i] = stato_letto
             else:
                 print(f"[WARNING] Errore lettura stato (HTTP {r.status_code})")
         except requests.exceptions.RequestException as e:
