@@ -23,6 +23,7 @@ class Actuator:
 
     def set_valve(self, state):
         # state è "Aperta" o "Chiusa"
+        print(f"[DEBUG] set_valve called for {self.name}: requested state='{state}', last state='{self.last_state}'")
         if state not in ("Aperta", "Chiusa"):
             return  # ignora stati non validi
         if not Actuator.serial_available:
