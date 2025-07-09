@@ -5,7 +5,7 @@ class Actuator:
     BASE_URL = "http://192.168.4.1"
     wifi_available = True
     relay_states = {}  # Stato locale: {channel: "Aperta"/"Chiusa"}
-
+    relay_states_initialized = False
     def __init__(self, barrel_name):
         self.name = barrel_name
         self.channel = BARREL_PINMAP[barrel_name]["valve_pin"]  # 0–5
@@ -28,7 +28,10 @@ class Actuator:
             Actuator.wifi_available = False
 
     def get_current_state(self):
-        return Actuator.relay_states.get(self.channel, "Chiusa")
+        if not Actuator.relay_states_initialized:
+            Actuator.update_states()
+            Actuator.relay_states_initialized = True
+        return Actuator.relay_states.get(self.channel, "Unknown")
 
     def set_valve(self, state):
         if state not in ("Aperta", "Chiusa"):
