@@ -4,34 +4,31 @@ import requests
 class Actuator:
     BASE_URL = "http://192.168.4.1"
     wifi_available = True
-    relay_states = None  # Stato cache da /getData
+    relay_states = {}  # Stato locale: {channel: "Aperta"/"Chiusa"}
 
     def __init__(self, barrel_name):
         self.name = barrel_name
         self.channel = BARREL_PINMAP[barrel_name]["valve_pin"]  # 0–5
-        self.last_state = "Unknown"
+        self.last_state = "Chiusa"
+        Actuator.relay_states.setdefault(self.channel, "Chiusa")
 
-    @classmethod
-    def update_states(cls):
+    @staticmethod
+    def update_states():
         try:
-            r = requests.get(f"{cls.BASE_URL}/getData", timeout=2)
+            r = requests.get(f"{Actuator.BASE_URL}/getData", timeout=2)
             if r.status_code == 200:
-                cls.relay_states = r.json()
-                print(f"[DEBUG] Stato attuale relè: {cls.relay_states}")
+                raw = r.json()
+                print(f"[DEBUG] Stato da /getData: {raw}")
+                for i in range(min(len(raw), 6)):
+                    Actuator.relay_states[i] = "Aperta" if raw[i] == "1" else "Chiusa"
             else:
-                print(f"[WARNING] Errore lettura stato relè (HTTP {r.status_code})")
+                print(f"[WARNING] Errore lettura stato (HTTP {r.status_code})")
         except requests.exceptions.RequestException as e:
             print(f"[WARNING] Fallita lettura stato: {e}")
-            cls.relay_states = None
-            cls.wifi_available = False
+            Actuator.wifi_available = False
 
     def get_current_state(self):
-        if Actuator.relay_states is None:
-            Actuator.update_states()
-        if Actuator.relay_states:
-            raw = Actuator.relay_states[self.channel]
-            return "Aperta" if raw == "1" else "Chiusa"
-        return "Unknown"
+        return Actuator.relay_states.get(self.channel, "Chiusa")
 
     def set_valve(self, state):
         if state not in ("Aperta", "Chiusa"):
@@ -42,23 +39,23 @@ class Actuator:
 
         current = self.get_current_state()
         if current == state:
-            print(f"[DEBUG] {self.name} è già in stato {state}, nessun comando inviato.")
+            print(f"[DEBUG] {self.name} è già in stato {state}, nessun comando.")
             return
 
+        # Invia comando di toggle
         relay_number = self.channel + 1
         url = f"{Actuator.BASE_URL}/Switch{relay_number}"
-
         try:
             r = requests.get(url, timeout=2)
             if r.status_code == 200:
-                print(f"[DEBUG] Toggled {self.name} → {state}")
+                print(f"[DEBUG] Toggle {self.name} inviato → {state}")
                 self.last_state = state
-                Actuator.update_states()  # aggiorna lo stato globale
+                Actuator.relay_states[self.channel] = state  # ⬅️ Aggiorna localmente
             else:
-                print(f"[WARNING] Errore HTTP per {self.name} (HTTP {r.status_code})")
+                print(f"[WARNING] HTTP {r.status_code} per {self.name}")
         except requests.exceptions.RequestException as e:
             print(f"[WARNING] Richiesta fallita: {e}")
             Actuator.wifi_available = False
 
     def __repr__(self):
-        return f"<Actuator name={self.name}, pin={self.channel}>"
+        return f"<Actuator name={self.name}, pin={self.channel}, state={self.get_current_state()}>"
