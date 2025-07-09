@@ -53,6 +53,10 @@ class ModernWineApp(ctk.CTk):
         Actuator.update_states()
         self.actuators = {nome: Actuator(nome) for nome in self.botti_data}
 
+        print("[DEBUG] Stato iniziale attuatori:", Actuator.relay_states)
+        for nome, b in self.botti_data.items():
+            print(f"[DEBUG] Stato desiderato botti {nome}: {b['valvola']}")
+
         # --- Icone ---
         gear_icon_path = os.path.join("assets", "gear.png")
         self.gear_img = ctk.CTkImage(light_image=Image.open(gear_icon_path), dark_image=Image.open(gear_icon_path), size=(44, 44))

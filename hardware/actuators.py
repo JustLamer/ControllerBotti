@@ -44,11 +44,14 @@ class Actuator:
             print(f"[DEBUG] Stato relè per {self.name} non presente, forzo sync...")
             Actuator.update_states()
 
-        current = self.get_current_state()
-        print(f"[DEBUG] Richiesta per {self.name}: voglio '{state}', attualmente è '{current}'")
+        current = self.get_current_state().strip()
+        desired = state.strip()
 
-        if current == state:
-            print(f"[DEBUG] {self.name} è già in stato {state}, nessun comando.")
+        print(f"[DEBUG] Richiesta per {self.name}: voglio '{desired}', attualmente è '{current}'")
+        print(f"[DEBUG] Confronto `{desired}` == `{current}` → {desired == current}")
+
+        if desired == current:
+            print(f"[DEBUG] {self.name} è già in stato {desired}, nessun comando.")
             return
 
         # Invia comando di toggle
