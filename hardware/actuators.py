@@ -13,7 +13,7 @@ class Actuator:
 
         if Actuator.serial_port is None:
             try:
-                Actuator.serial_port = serial.Serial('/dev/ttyUSB0', baudrate=9600, timeout=1)
+                Actuator.serial_port = serial.Serial('/dev/ttyUSB0', baudrate=115200, timeout=1)
                 #Actuator.serial_port.write(b'ALL_OFF\n')
                 Actuator.serial_port.flush()
             except serial.serialutil.SerialException as e:
