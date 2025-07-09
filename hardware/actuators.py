@@ -27,9 +27,7 @@ class Actuator:
             Actuator.wifi_available = False
 
     def get_current_state(self):
-        if not Actuator.relay_states_initialized:
-            Actuator.update_states()
-            Actuator.relay_states_initialized = True
+        Actuator.update_states()
         return Actuator.relay_states.get(self.channel, "Unknown")
 
     def set_valve(self, state):
