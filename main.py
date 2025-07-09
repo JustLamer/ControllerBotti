@@ -51,7 +51,7 @@ class ModernWineApp(ctk.CTk):
                 b["valvola"] = "Chiusa"
 
         self.actuators = {nome: Actuator(nome) for nome in self.botti_data}
-
+        Actuator.update_states()
         # --- Icone ---
         gear_icon_path = os.path.join("assets", "gear.png")
         self.gear_img = ctk.CTkImage(light_image=Image.open(gear_icon_path), dark_image=Image.open(gear_icon_path), size=(44, 44))

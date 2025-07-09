@@ -20,7 +20,7 @@ class Actuator:
                 raw = r.json()
                 print(f"[DEBUG] Stato da /getData: {raw}")
                 for i in range(min(len(raw), 6)):
-                    Actuator.relay_states[i] = "Aperta" if raw[i] == "1" else "Chiusa"
+                    Actuator.relay_states[i] = "Chiusa" if raw[i] == "0" else "Aperta"
             else:
                 print(f"[WARNING] Errore lettura stato (HTTP {r.status_code})")
         except requests.exceptions.RequestException as e:
