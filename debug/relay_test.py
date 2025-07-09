@@ -6,7 +6,8 @@ instrument.serial.baudrate = 115200
 instrument.serial.bytesize = 8
 instrument.serial.parity = minimalmodbus.serial.PARITY_NONE
 instrument.serial.stopbits = 1
-instrument.serial.timeout = 1
+instrument.serial.timeout = 2
+instrument.debug = True
 
 try:
     # Attiva il primo relè (coil 0)
