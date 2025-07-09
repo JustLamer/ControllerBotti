@@ -10,7 +10,6 @@ class Actuator:
         self.name = barrel_name
         self.channel = BARREL_PINMAP[barrel_name]["valve_pin"]  # 0–5
         self.last_state = "Chiusa"
-        Actuator.relay_states.setdefault(self.channel, "Chiusa")
 
     @staticmethod
     def update_states():
