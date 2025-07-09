@@ -47,6 +47,7 @@ class Actuator:
         self.last_state = state
         print(f"[DEBUG] Sent command to set {self.name} to {state}")
 
+    @staticmethod
     def calculate_crc(data):
         crc = 0xFFFF
         for pos in data:
