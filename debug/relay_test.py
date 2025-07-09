@@ -9,19 +9,17 @@ instrument.serial.stopbits = 1
 instrument.serial.timeout = 2
 instrument.debug = True
 
-for addr in range(1, 11):
-    print(f"Tentativo con ID {addr}...")
-    instrument = minimalmodbus.Instrument('/dev/ttyUSB0', addr)
-    instrument.serial.baudrate = 115200
+for baud in [115200, 9600, 19200, 38400]:
+    print(f"Provo baudrate {baud}")
+    instrument = minimalmodbus.Instrument('/dev/ttyUSB0', 1)
+    instrument.serial.baudrate = baud
     instrument.serial.bytesize = 8
     instrument.serial.parity = minimalmodbus.serial.PARITY_NONE
     instrument.serial.stopbits = 1
     instrument.serial.timeout = 1
-    instrument.clear_buffers_before_each_transaction = True
-
     try:
         instrument.write_bit(0, 1, functioncode=5)
-        print(f"✅ Risposta ricevuta con ID {addr}")
+        print(f"✅ Funziona con baudrate {baud}")
         break
-    except Exception as e:
-        print(f"❌ Nessuna risposta con ID {addr}")
+    except Exception:
+        print(f"❌ Nessuna risposta con baudrate {baud}")
