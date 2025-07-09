@@ -14,7 +14,7 @@ class Actuator:
         if Actuator.serial_port is None:
             try:
                 Actuator.serial_port = serial.Serial('/dev/ttyUSB0', baudrate=9600, timeout=1)
-                Actuator.serial_port.write(b'ALL_OFF\n')
+                #Actuator.serial_port.write(b'ALL_OFF\n')
                 Actuator.serial_port.flush()
             except serial.serialutil.SerialException as e:
                 print(f"[WARNING] Serial port not available: {e}")
@@ -23,29 +23,28 @@ class Actuator:
 
     def set_valve(self, state):
         if state not in ("Aperta", "Chiusa"):
-            print(f"[DEBUG] set_valve called for {self.name}: requested state='{state}', last state='{self.last_state}'")
             return
         if not Actuator.serial_available:
             print(f"[DEBUG] Skipping valve control for {self.name} (no serial connection)")
             return
 
-        relay_address = self.channel  # Assicurati che self.channel sia corretto
+        relay_address = self.channel  # int tra 0 e 5
         device_address = 0x06
         function_code = 0x05
         output_address = relay_address.to_bytes(2, byteorder='big')
-        if state == "Aperta":
-            output_value = b'\xFF\x00'
-        else:
-            output_value = b'\x00\x00'
-
+        output_value = b'\xFF\x00' if state == "Aperta" else b'\x00\x00'
         message = bytes([device_address, function_code]) + output_address + output_value
-        crc = self.calculate_crc(message)
+        crc = Actuator.calculate_crc(message)
         full_message = message + crc
 
+        print(f"[DEBUG] Comando in esadecimale: {full_message.hex()}")
         Actuator.serial_port.write(full_message)
         Actuator.serial_port.flush()
         self.last_state = state
         print(f"[DEBUG] Sent command to set {self.name} to {state}")
+
+        resp = Actuator.serial_port.read(8)
+        print(f"[DEBUG] Risposta relay: {resp.hex()}")
 
     @staticmethod
     def calculate_crc(data):
