@@ -11,6 +11,20 @@ class Actuator:
         self.channel = BARREL_PINMAP[barrel_name]["valve_pin"]  # 0–5
 
     @staticmethod
+    def all_off():
+        try:
+            r = requests.get(f"{Actuator.BASE_URL}/AllOff", timeout=2)
+            if r.status_code == 200:
+                print("[DEBUG] Comando AllOff inviato con successo")
+                for i in range(6):
+                    Actuator.relay_states[i] = "Chiusa"
+            else:
+                print(f"[WARNING] Errore HTTP AllOff: {r.status_code}")
+        except requests.exceptions.RequestException as e:
+            print(f"[WARNING] Fallita richiesta AllOff: {e}")
+            Actuator.wifi_available = False
+
+    @staticmethod
     def update_states():
         try:
             r = requests.get(f"{Actuator.BASE_URL}/getData", timeout=2)

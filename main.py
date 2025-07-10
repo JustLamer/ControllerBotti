@@ -50,7 +50,13 @@ class ModernWineApp(ctk.CTk):
             if "valvola" not in b or b["valvola"] not in ("Aperta", "Chiusa"):
                 b["valvola"] = "Chiusa"
 
+        # 1. Spegne tutti i relè fisici per partire da uno stato noto
+        Actuator.all_off()
+
+        # 2. Sincronizza lo stato locale con il modulo (tutti 'Chiusa' ora)
         Actuator.update_states()
+
+        # 3. Crea gli actuator associati alle botti
         self.actuators = {nome: Actuator(nome) for nome in self.botti_data}
 
         print("[DEBUG] Stato iniziale attuatori:", Actuator.relay_states)
