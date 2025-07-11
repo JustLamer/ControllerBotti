@@ -155,8 +155,8 @@ class Actuator:
                 s = Actuator._serial_instance
                 if s is None:
                     raise Exception("Seriale RS485 non inizializzata")
-                # Modbus RTU Read Coils: indirizzo dispositivo 0x06, 8 relè
-                req = bytes([0x06, 0x01, 0x00, 0x00, 0x00, 0x08])
+                # Modbus RTU Read Coils: indirizzo dispositivo 0x06, 6 relè
+                req = bytes([0x06, 0x01, 0x00, 0x00, 0x00, 0x06])
                 req += _modbus_crc(req)
                 s.reset_input_buffer()
                 s.write(req)
