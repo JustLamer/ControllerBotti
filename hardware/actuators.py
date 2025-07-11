@@ -2,13 +2,25 @@ from .pinmap import BARREL_PINMAP
 import requests
 import serial  # Per RS485
 
+def _modbus_crc(data: bytes) -> bytes:
+    crc = 0xFFFF
+    for pos in data:
+        crc ^= pos
+        for _ in range(8):
+            if crc & 1:
+                crc >>= 1
+                crc ^= 0xA001
+            else:
+                crc >>= 1
+    return bytes([crc & 0xFF, (crc >> 8) & 0xFF])
+
 class Actuator:
     BASE_URL = "http://192.168.4.1"
     wifi_available = True
     relay_states = {}
     _serial_instance = None  # Singleton per la seriale RS485
+    _last_rs485 = False  # Tiene traccia dell'ultima modalità istanziata
 
-    # Mappa canale -> comando RS485 per toggle (usando gli hex forniti)
     RS485_COMMANDS = {
         0: bytes.fromhex("06 05 00 01 55 00 A2 ED"),
         1: bytes.fromhex("06 05 00 02 55 00 52 ED"),
@@ -24,6 +36,7 @@ class Actuator:
         self.name = barrel_name
         self.channel = BARREL_PINMAP[barrel_name]["valve_pin"]
         self.use_rs485 = use_rs485
+        Actuator._last_rs485 = use_rs485  # Ricorda l'ultima modalità usata
 
         if use_rs485 and Actuator._serial_instance is None:
             try:
@@ -41,9 +54,10 @@ class Actuator:
                 raise
 
     @staticmethod
-    def all_off(use_rs485=False):
+    def all_off(use_rs485=None):
+        if use_rs485 is None:
+            use_rs485 = Actuator._last_rs485
         if not use_rs485:
-            # Comando Wi-Fi
             try:
                 r = requests.get(f"{Actuator.BASE_URL}/AllOff", timeout=2)
                 if r.status_code == 200:
@@ -56,7 +70,6 @@ class Actuator:
                 print(f"[WARNING] Fallita richiesta AllOff: {e}")
                 Actuator.wifi_available = False
         else:
-            # Comando RS485
             try:
                 s = Actuator._serial_instance
                 if s is None:
@@ -77,11 +90,9 @@ class Actuator:
             print(f"[DEBUG] Skipping {self.name} (Wi-Fi non disponibile)")
             return
 
-        # Sync stato relè
         if self.channel not in Actuator.relay_states:
             print(f"[DEBUG] Stato relè per {self.name} non presente, forzo sync...")
-            if not self.use_rs485:
-                Actuator.update_states()
+            Actuator.update_states(self.use_rs485)
 
         current = self.get_current_state().strip()
         desired = state.strip()
@@ -92,7 +103,6 @@ class Actuator:
             return
 
         if self.use_rs485:
-            # Invia comando RS485
             try:
                 s = Actuator._serial_instance
                 if s is None:
@@ -103,7 +113,6 @@ class Actuator:
             except Exception as e:
                 print("[ERROR] Invio comando RS485 fallito:", e)
         else:
-            # Invia comando Wi-Fi
             relay_number = self.channel + 1
             url = f"{Actuator.BASE_URL}/Switch{relay_number}"
             try:
@@ -123,21 +132,45 @@ class Actuator:
         return stato
 
     @staticmethod
-    def update_states():
-        # Solo Wi-Fi: per RS485 va implementato a parte se il protocollo lo permette
-        try:
-            r = requests.get(f"{Actuator.BASE_URL}/getData", timeout=2)
-            if r.status_code == 200:
-                raw = r.json()
-                print(f"[DEBUG] Stato da /getData: {raw}")
-                for i in range(min(len(raw), 6)):
-                    stato_letto = "Aperta" if raw[i] == "1" else "Chiusa"
-                    Actuator.relay_states[i] = stato_letto
-            else:
-                print(f"[WARNING] Errore lettura stato (HTTP {r.status_code})")
-        except requests.exceptions.RequestException as e:
-            print(f"[WARNING] Fallita lettura stato: {e}")
-            Actuator.wifi_available = False
+    def update_states(use_rs485=None):
+        if use_rs485 is None:
+            use_rs485 = Actuator._last_rs485
+
+        if not use_rs485:
+            try:
+                r = requests.get(f"{Actuator.BASE_URL}/getData", timeout=2)
+                if r.status_code == 200:
+                    raw = r.json()
+                    print(f"[DEBUG] Stato da /getData: {raw}")
+                    for i in range(min(len(raw), 6)):
+                        stato_letto = "Aperta" if raw[i] == "1" else "Chiusa"
+                        Actuator.relay_states[i] = stato_letto
+                else:
+                    print(f"[WARNING] Errore lettura stato (HTTP {r.status_code})")
+            except requests.exceptions.RequestException as e:
+                print(f"[WARNING] Fallita lettura stato: {e}")
+                Actuator.wifi_available = False
+        else:
+            try:
+                s = Actuator._serial_instance
+                if s is None:
+                    raise Exception("Seriale RS485 non inizializzata")
+                # Modbus RTU Read Coils: indirizzo dispositivo 0x06, 8 relè
+                req = bytes([0x06, 0x01, 0x00, 0x00, 0x00, 0x08])
+                req += _modbus_crc(req)
+                s.reset_input_buffer()
+                s.write(req)
+                resp = s.read(6)
+                if len(resp) < 6:
+                    print("[ERROR] Risposta RS485 troppo corta:", resp)
+                    return
+                data_byte = resp[3]  # Primo byte degli 8 relay (bitmask)
+                for i in range(6):
+                    stato = "Aperta" if (data_byte & (1 << i)) else "Chiusa"
+                    Actuator.relay_states[i] = stato
+                print("[DEBUG] Stato relè aggiornato via RS485:", Actuator.relay_states)
+            except Exception as e:
+                print("[ERROR] Lettura stato via RS485 fallita:", e)
 
     def __repr__(self):
         return f"<Actuator name={self.name}, pin={self.channel}, state={self.get_current_state()}, rs485={self.use_rs485}>"
