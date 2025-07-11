@@ -54,11 +54,6 @@ class ModernWineApp(ctk.CTk):
         # 1. Spegne tutti i relè fisici per partire da uno stato noto
         Actuator.all_off(use_rs485=True)
 
-        # 2. Sincronizza lo stato locale con il modulo (tutti 'Chiusa' ora)
-        Actuator.update_states(use_rs485=True)
-
-        # 3. Crea gli actuator associati alle botti
-
 
         print("[DEBUG] Stato iniziale attuatori:", Actuator.relay_states)
         for nome, b in self.botti_data.items():
