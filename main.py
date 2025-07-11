@@ -51,7 +51,7 @@ class ModernWineApp(ctk.CTk):
                 b["valvola"] = "Chiusa"
 
         # 1. Spegne tutti i relè fisici per partire da uno stato noto
-        Actuator.all_off()
+        Actuator.all_off(use_rs485=True)
 
         # 2. Sincronizza lo stato locale con il modulo (tutti 'Chiusa' ora)
         Actuator.update_states()
