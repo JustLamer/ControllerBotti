@@ -81,6 +81,8 @@ class Actuator:
             except Exception as e:
                 print("[ERROR] Invio comando RS485 fallito:", e)
 
+        Actuator._set_all_closed()
+
     def set_valve(self, state):
         if state not in ("Aperta", "Chiusa"):
             print(f"[ERROR] Stato non valido: {state}")
@@ -130,6 +132,11 @@ class Actuator:
         stato = Actuator.relay_states.get(self.channel, "Unknown")
         print(f"[DEBUG] Stato attuale di {self.name} (canale {self.channel}): {stato}")
         return stato
+
+    @staticmethod
+    def _set_all_closed():
+        for i in range(6):
+            Actuator.relay_states[i] = "Chiusa"
 
     @staticmethod
     def update_states(use_rs485=None):
