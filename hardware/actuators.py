@@ -140,44 +140,7 @@ class Actuator:
 
     @staticmethod
     def update_states(use_rs485=None):
-        if use_rs485 is None:
-            use_rs485 = Actuator._last_rs485
-
-        if not use_rs485:
-            try:
-                r = requests.get(f"{Actuator.BASE_URL}/getData", timeout=2)
-                if r.status_code == 200:
-                    raw = r.json()
-                    print(f"[DEBUG] Stato da /getData: {raw}")
-                    for i in range(min(len(raw), 6)):
-                        stato_letto = "Aperta" if raw[i] == "1" else "Chiusa"
-                        Actuator.relay_states[i] = stato_letto
-                else:
-                    print(f"[WARNING] Errore lettura stato (HTTP {r.status_code})")
-            except requests.exceptions.RequestException as e:
-                print(f"[WARNING] Fallita lettura stato: {e}")
-                Actuator.wifi_available = False
-        else:
-            try:
-                s = Actuator._serial_instance
-                if s is None:
-                    raise Exception("Seriale RS485 non inizializzata")
-                # Modbus RTU Read Coils: indirizzo dispositivo 0x06, 6 relè
-                req = bytes([0x06, 0x01, 0x00, 0x00, 0x00, 0x06])
-                req += _modbus_crc(req)
-                s.reset_input_buffer()
-                s.write(req)
-                resp = s.read(6)
-                if len(resp) < 6:
-                    print("[ERROR] Risposta RS485 troppo corta:", resp)
-                    return
-                data_byte = resp[3]  # Primo byte degli 8 relay (bitmask)
-                for i in range(6):
-                    stato = "Aperta" if (data_byte & (1 << i)) else "Chiusa"
-                    Actuator.relay_states[i] = stato
-                print("[DEBUG] Stato relè aggiornato via RS485:", Actuator.relay_states)
-            except Exception as e:
-                print("[ERROR] Lettura stato via RS485 fallita:", e)
+        Actuator._set_all_closed()
 
     def __repr__(self):
         return f"<Actuator name={self.name}, pin={self.channel}, state={self.get_current_state()}, rs485={self.use_rs485}>"
