@@ -124,7 +124,7 @@ class ModernWineApp(ctk.CTk):
             b.setdefault("valve_history", []).append((now, b["valvola"]))
             b["valve_history"] = b["valve_history"][-100:]
 
-            self.actuators[nome].set_valve(b["valvola"])
+            #self.actuators[nome].set_valve(b["valvola"])
 
             log_botte_csv(
                 nome_botte=nome,
