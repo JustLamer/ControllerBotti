@@ -17,7 +17,7 @@ class Relay6CHTest:
 
     def read_coils(self, address=0, count=6):
         # pymodbus 3.x usa 'slave_id' come keyword
-        result = self.client.read_coils(address, count, slave_id=self.slave_id)
+        result = self.client.read_coils(address, count, unit=self.slave_id)
         if not result.isError():
             return result.bits
         else:
