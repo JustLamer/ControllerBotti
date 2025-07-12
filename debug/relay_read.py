@@ -1,7 +1,7 @@
 from pymodbus.client import ModbusSerialClient
 
 class Relay6CHTest:
-    def __init__(self, port='/dev/ttyUSB0', baudrate=9600, slave_id=1):
+    def __init__(self, port='/dev/ttyUSB0', baudrate=115200, slave_id=1):
         self.client = ModbusSerialClient(
             port=port,
             baudrate=baudrate,
@@ -16,6 +16,7 @@ class Relay6CHTest:
         return self.client.connect()
 
     def read_coils(self, address=0, count=6):
+        # pymodbus 3.x usa 'slave_id' come keyword
         result = self.client.read_coils(address, count, slave_id=self.slave_id)
         if not result.isError():
             return result.bits
@@ -26,9 +27,8 @@ class Relay6CHTest:
     def close(self):
         self.client.close()
 
-
 if __name__ == '__main__':
-    relay_tester = Relay6CHTest(port='/dev/ttyUSB0')  # Cambia la porta se necessario
+    relay_tester = Relay6CHTest(port='/dev/ttyUSB0')  # Cambia porta se serve
     if relay_tester.connect():
         states = relay_tester.read_coils()
         if states is not None:
