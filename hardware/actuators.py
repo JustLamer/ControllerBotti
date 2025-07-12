@@ -55,7 +55,7 @@ class Actuator:
                 raise
 
     @staticmethod
-    def batch_set_valves(state_dict, actuators=None, delay=0.15):
+    def batch_set_valves(state_dict, actuators=None, delay=0.5):
         """
         Imposta in modo sicuro gli stati di più canali.
         - state_dict: dict {nome_botte: stato_desiderato}
