@@ -143,7 +143,7 @@ class ModernWineApp(ctk.CTk):
 
         # Prepara il dict degli stati desiderati
         state_dict = {nome: b["valvola"] for nome, b in self.botti_data.items()}
-        Actuator.batch_set_valves(state_dict, use_rs485=True)
+        Actuator.batch_set_valves(state_dict, actuators=self.actuators)
 
 if __name__ == "__main__":
     ModernWineApp().mainloop()

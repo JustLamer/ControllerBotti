@@ -55,42 +55,33 @@ class Actuator:
                 raise
 
     @staticmethod
-    def batch_set_valves(state_dict, delay=0.15, use_rs485=None):
+    def batch_set_valves(state_dict, actuators=None, delay=0.15):
         """
-        Imposta in modo sicuro gli stati di più canali in sequenza.
+        Imposta in modo sicuro gli stati di più canali.
         - state_dict: dict {nome_botte: stato_desiderato}
-        - delay: tempo in secondi tra un comando e il successivo
-        - use_rs485: forza uso RS485 (default None → autodetect)
+        - actuators: dict {nome_botte: Actuator} (se già istanziati) oppure None (allora crea/reusa con registry interno)
+        - delay: tempo tra i comandi (in secondi)
         """
-        if not state_dict:
-            return
-
-        # Aggiorna lo stato locale PRIMA di cambiare qualcosa
-        Actuator.update_states(use_rs485=use_rs485)
-
         for nome, stato_desiderato in state_dict.items():
-            # Instanzia se necessario (assume che l'oggetto sia già in actuators)
-            actuator = Actuator.reuse_or_create(nome, use_rs485=use_rs485)
-            stato_attuale = actuator.get_current_state().strip()
-            if stato_attuale != stato_desiderato:
+            if actuators is not None:
+                actuator = actuators[nome]
+            else:
+                actuator = Actuator.reuse_or_create(nome)
+            current = Actuator.relay_states.get(actuator.channel, "Unknown")
+            if current != stato_desiderato:
                 actuator.set_valve(stato_desiderato)
+                # set_valve aggiorna relay_states appena il comando viene eseguito
                 time.sleep(delay)
 
     @staticmethod
-    def reuse_or_create(nome, use_rs485=None):
-        """
-        Recupera l'istanza già creata (se esiste) oppure la crea nuova.
-        """
-        # Usa il registry se esiste, altrimenti crea una nuova istanza
-        if hasattr(Actuator, "_global_registry") and nome in Actuator._global_registry:
+    def reuse_or_create(nome, use_rs485=True):
+        if not hasattr(Actuator, "_global_registry"):
+            Actuator._global_registry = {}
+        if nome in Actuator._global_registry:
             return Actuator._global_registry[nome]
-        else:
-            actuator = Actuator(nome, use_rs485=use_rs485)
-            # Salva in registro globale per futuri batch
-            if not hasattr(Actuator, "_global_registry"):
-                Actuator._global_registry = {}
-            Actuator._global_registry[nome] = actuator
-            return actuator
+        actuator = Actuator(nome, use_rs485=use_rs485)
+        Actuator._global_registry[nome] = actuator
+        return actuator
 
     @staticmethod
     def all_off(use_rs485=None):
