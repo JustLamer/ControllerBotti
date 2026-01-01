@@ -1,27 +1,27 @@
 import customtkinter as ctk
 from PIL import Image
-from numpy.random import random
+from gui.theme import COLORS, font
 
 
 class OverviewFrame(ctk.CTkFrame):
     def __init__(self, master, app, **kwargs):
-        super().__init__(master, fg_color="#191919", **kwargs)
+        super().__init__(master, fg_color=COLORS["bg"], **kwargs)
         self.app = app
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
 
         barrel_img_path = "assets/barrel.png"
 
-        FRAME_W = 150
-        FRAME_H = 210
-        IMG_W = 115
-        IMG_H = 160
+        FRAME_W = 190
+        FRAME_H = 230
+        IMG_W = 125
+        IMG_H = 170
 
         barrel_img_pil = Image.open(barrel_img_path).resize((IMG_W, IMG_H), Image.LANCZOS)
         barrel_ctk_img = ctk.CTkImage(light_image=barrel_img_pil, dark_image=barrel_img_pil, size=(IMG_W, IMG_H))
 
         center_frame = ctk.CTkFrame(self, fg_color="transparent")
-        center_frame.grid(row=0, column=0, padx=5, pady=10, sticky="nsew")
+        center_frame.grid(row=0, column=0, padx=10, pady=14, sticky="nsew")
         center_frame.grid_columnconfigure((0, 1, 2), weight=0)
         center_frame.grid_rowconfigure(0, weight=1)
 
@@ -30,8 +30,14 @@ class OverviewFrame(ctk.CTkFrame):
             b = app.botti_data[nome]
 
             # Frame bordo verde scuro (più piccolo)
-            bg_frame = ctk.CTkFrame(center_frame, width=FRAME_W, height=FRAME_H, corner_radius=20, fg_color="#232a20")
-            bg_frame.grid(row=0, column=idx, padx=2, pady=2, sticky="n")
+            bg_frame = ctk.CTkFrame(
+                center_frame,
+                width=FRAME_W,
+                height=FRAME_H,
+                corner_radius=18,
+                fg_color=COLORS["panel_alt"],
+            )
+            bg_frame.grid(row=0, column=idx, padx=6, pady=6, sticky="n")
             bg_frame.grid_propagate(False)
 
             # Immagine barrel
@@ -39,14 +45,20 @@ class OverviewFrame(ctk.CTkFrame):
             border_lbl.place(relx=0.5, rely=0.5, anchor="center")
 
             # Dati sopra
-            dot = ctk.CTkLabel(bg_frame, text="●", font=ctk.CTkFont(size=24), text_color="white", fg_color="transparent")
+            dot = ctk.CTkLabel(
+                bg_frame,
+                text="●",
+                font=font(size=24),
+                text_color=COLORS["text"],
+                fg_color="transparent",
+            )
             dot.place(relx=0.5, rely=0.15, anchor="center")
 
             temp_lbl = ctk.CTkLabel(
                 bg_frame,
                 text=f"{b['temperatura']:.1f} °C",
-                font=ctk.CTkFont(size=18, weight="bold"),
-                text_color="white",
+                font=font(size=20, weight="bold"),
+                text_color=COLORS["text"],
                 fg_color="transparent"
             )
             temp_lbl.place(relx=0.5, rely=0.26, anchor="center")
@@ -54,8 +66,8 @@ class OverviewFrame(ctk.CTkFrame):
             valve_lbl = ctk.CTkLabel(
                 bg_frame,
                 text=f"Valvola: {b['valvola']}",
-                font=ctk.CTkFont(size=12),
-                text_color="white",
+                font=font(size=12),
+                text_color=COLORS["text_muted"],
                 fg_color="transparent"
             )
             valve_lbl.place(relx=0.5, rely=0.37, anchor="center")
@@ -68,12 +80,12 @@ class OverviewFrame(ctk.CTkFrame):
             min_lbl = ctk.CTkLabel(
                 bg_frame,
                 text=f"{b['min_temp']:.1f}",
-                font=ctk.CTkFont(size=10, weight="bold"),
-                text_color="blue",
-                fg_color="#000000",
-                corner_radius=6,
-                width=36,
-                height=22,
+                font=font(size=10, weight="bold"),
+                text_color=COLORS["info"],
+                fg_color=COLORS["panel_soft"],
+                corner_radius=8,
+                width=42,
+                height=24,
                 anchor="center",
                 justify="center"
             )
@@ -82,12 +94,12 @@ class OverviewFrame(ctk.CTkFrame):
             max_lbl = ctk.CTkLabel(
                 bg_frame,
                 text=f"{b['max_temp']:.1f}",
-                font=ctk.CTkFont(size=10, weight="bold"),
-                text_color="red",
-                fg_color="#000000",
-                corner_radius=6,
-                width=36,
-                height=22,
+                font=font(size=10, weight="bold"),
+                text_color=COLORS["danger"],
+                fg_color=COLORS["panel_soft"],
+                corner_radius=8,
+                width=42,
+                height=24,
                 anchor="center",
                 justify="center"
             )
@@ -109,18 +121,14 @@ class OverviewFrame(ctk.CTkFrame):
         for nome, b in self.app.botti_data.items():
             widgets = self.botte_widgets[nome]
 
-            # Nuova logica: ottieni temperatura da SensorManager
-            serial = self.app.settings.get("sensors_mapping", {}).get(nome, "test")
-            temp = self.app.sensor_manager.read_temperature_by_serial(serial)
-
-            b["temperatura"] = temp
+            temp = b["temperatura"]
 
             if temp < b["min_temp"]:
-                widgets["dot"].configure(text_color="#459bed")
+                widgets["dot"].configure(text_color=COLORS["info"])
             elif temp > b["max_temp"]:
-                widgets["dot"].configure(text_color="#ed4747")
+                widgets["dot"].configure(text_color=COLORS["danger"])
             else:
-                widgets["dot"].configure(text_color="#6ddb57")
+                widgets["dot"].configure(text_color=COLORS["success"])
             widgets["temp"].configure(text=f"{temp:.1f} °C")
             widgets["valve"].configure(text=f"Valvola: {b['valvola']}")
             widgets["min"].configure(text=f"{b['min_temp']:.1f}")

@@ -6,6 +6,7 @@ import matplotlib.dates as mdates
 import datetime
 from config import save_config
 from utils.logger import log_event
+from gui.theme import COLORS, font
 
 DELTA_MAP = {
     "Tutto": None,
@@ -29,17 +30,17 @@ def ensure_dt(t):
 
 class BarrelTab(ctk.CTkFrame):
     def __init__(self, master, app, nome, **kwargs):
-        super().__init__(master, corner_radius=16, fg_color="#223118", **kwargs)
+        super().__init__(master, corner_radius=16, fg_color=COLORS["panel"], **kwargs)
         self.app = app
         self.nome = nome
         self.grid_columnconfigure(1, weight=1)
         self.show_legend = True
 
         # Font settings
-        font_xs = ctk.CTkFont(size=11)
-        font_s = ctk.CTkFont(size=12)
-        font_m = ctk.CTkFont(size=13, weight="bold")
-        font_l = ctk.CTkFont(size=15, weight="bold")
+        font_xs = font(size=11)
+        font_s = font(size=12)
+        font_m = font(size=13, weight="bold")
+        font_l = font(size=16, weight="bold")
 
         # HEADER: titolo + dot + temperatura + valvola + lock su una riga compatta
         header = ctk.CTkFrame(self, fg_color="transparent")
@@ -47,7 +48,7 @@ class BarrelTab(ctk.CTkFrame):
         header.grid_columnconfigure((0, 1, 2, 3, 4), weight=0)
         self.title_lbl = ctk.CTkLabel(header, text=nome, font=font_l)
         self.title_lbl.grid(row=0, column=0, sticky="w", padx=(4, 4))
-        self.dot_lbl = ctk.CTkLabel(header, text="●", font=ctk.CTkFont(size=18), text_color="#6ddb57")
+        self.dot_lbl = ctk.CTkLabel(header, text="●", font=font(size=18), text_color=COLORS["success"])
         self.dot_lbl.grid(row=0, column=1, sticky="w", padx=(2, 4))
         self.temp_lbl = ctk.CTkLabel(header, text="", font=font_l)
         self.temp_lbl.grid(row=0, column=2, sticky="w", padx=(4, 2))
@@ -82,15 +83,17 @@ class BarrelTab(ctk.CTkFrame):
             width=62,
             font=font_xs,
             height=24,
-            command=self.toggle_legend
+            command=self.toggle_legend,
+            fg_color=COLORS["accent"],
+            hover_color=COLORS["accent_dark"],
         )
         self.legend_btn.grid(row=0, column=4, padx=(8, 0), sticky="w")
 
         # Soglie e step (in una riga compatta)
-        soglie_frame = ctk.CTkFrame(self, fg_color="#223118", corner_radius=10)
+        soglie_frame = ctk.CTkFrame(self, fg_color=COLORS["panel_alt"], corner_radius=10)
         soglie_frame.grid(row=2, column=0, sticky="ew", padx=4, pady=6)
         soglie_frame.grid_columnconfigure((0, 1, 2, 3, 4, 5, 6), weight=0)
-        ctk.CTkLabel(soglie_frame, text="Min:", font=font_xs, text_color="blue").grid(row=0, column=0)
+        ctk.CTkLabel(soglie_frame, text="Min:", font=font_xs, text_color=COLORS["info"]).grid(row=0, column=0)
         btn_minm = ctk.CTkButton(soglie_frame, text="-", width=18, height=18, font=font_xs,
                                  command=lambda: self._button_feedback(self.modifica_soglia, "min_temp", -1))
         btn_minm.grid(row=0, column=1, padx=1)
@@ -99,7 +102,7 @@ class BarrelTab(ctk.CTkFrame):
         btn_minp = ctk.CTkButton(soglie_frame, text="+", width=18, height=18, font=font_xs,
                                  command=lambda: self._button_feedback(self.modifica_soglia, "min_temp", 1))
         btn_minp.grid(row=0, column=3, padx=1)
-        ctk.CTkLabel(soglie_frame, text="Max:", font=font_xs, text_color="red").grid(row=0, column=4, padx=(8, 0))
+        ctk.CTkLabel(soglie_frame, text="Max:", font=font_xs, text_color=COLORS["danger"]).grid(row=0, column=4, padx=(8, 0))
         btn_maxm = ctk.CTkButton(soglie_frame, text="-", width=18, height=18, font=font_xs,
                                  command=lambda: self._button_feedback(self.modifica_soglia, "max_temp", -1))
         btn_maxm.grid(row=0, column=5, padx=1)
@@ -133,7 +136,7 @@ class BarrelTab(ctk.CTkFrame):
         btn = self.focus_get()
         if btn and isinstance(btn, ctk.CTkButton):
             orig = btn.cget("fg_color")
-            btn.configure(fg_color="#44c079")
+            btn.configure(fg_color=COLORS["accent"])
             self.after(80, lambda: btn.configure(fg_color=orig))
         func(*args)
 
@@ -167,11 +170,11 @@ class BarrelTab(ctk.CTkFrame):
     def get_dot_color(self):
         b = self.app.botti_data[self.nome]
         if b["temperatura"] > b["max_temp"]:
-            return "#ed4747"
+            return COLORS["danger"]
         elif b["temperatura"] < b["min_temp"]:
-            return "#459bed"
+            return COLORS["info"]
         else:
-            return "#6ddb57"
+            return COLORS["success"]
 
     def change_step(self, event=None):
         self.app.settings["step_temp"] = float(self.step_var.get())
@@ -205,7 +208,7 @@ class BarrelTab(ctk.CTkFrame):
         b = self.app.botti_data[self.nome]
 
         if hasattr(self, 'temp_lbl') and self.temp_lbl.winfo_exists():
-            self.temp_lbl.configure(text=f"{b['temperatura']} °C")
+            self.temp_lbl.configure(text=f"{b['temperatura']:.1f} °C")
         forced = b.get("forced")
         expected = {
             None: "Auto",
@@ -215,7 +218,7 @@ class BarrelTab(ctk.CTkFrame):
         if self.mode_var.get() != expected:
             self.mode_var.set(expected)
         self.animate_dot_color(self.get_dot_color())
-        self.temp_lbl.configure(text=f"{b['temperatura']} °C")
+        self.temp_lbl.configure(text=f"{b['temperatura']:.1f} °C")
         self.valve_lbl.configure(text=f"Valvola: {b['valvola']}")
         self.min_lbl.configure(text=f"{b['min_temp']:.1f}")
         self.max_lbl.configure(text=f"{b['max_temp']:.1f}")
@@ -242,16 +245,19 @@ class BarrelTab(ctk.CTkFrame):
             vdata = [x for x in vdata if x[0] >= cutoff]
 
         self.ax.clear()
+        self.fig.patch.set_facecolor(COLORS["panel"])
+        self.ax.set_facecolor(COLORS["panel_alt"])
+        self.ax.tick_params(colors=COLORS["text_muted"], labelsize=7)
         if data:
             x = [t for t, v in data]
             y = [v for t, v in data]
-            self.ax.plot(x, y, marker='o',markersize=2, color='#50bcdf', label="Temperatura")
-            self.ax.axhline(b['min_temp'], color='blue', linestyle='--', label='Min')
-            self.ax.axhline(b['max_temp'], color='red', linestyle='--', label='Max')
+            self.ax.plot(x, y, marker='o', markersize=2, color=COLORS["accent"], label="Temperatura")
+            self.ax.axhline(b['min_temp'], color=COLORS["info"], linestyle='--', label='Min')
+            self.ax.axhline(b['max_temp'], color=COLORS["danger"], linestyle='--', label='Max')
             opens = [t for t, v in vdata if v == "Aperta"]
             closes = [t for t, v in vdata if v == "Chiusa"]
-            self.ax.scatter(opens, [b['max_temp']] * len(opens), marker='v', color='orange', label='Aperta')
-            self.ax.scatter(closes, [b['min_temp']] * len(closes), marker='^', color='purple', label='Chiusa')
+            self.ax.scatter(opens, [b['max_temp']] * len(opens), marker='v', color=COLORS["warning"], label='Aperta')
+            self.ax.scatter(closes, [b['min_temp']] * len(closes), marker='^', color=COLORS["panel_soft"], label='Chiusa')
             locator = mdates.AutoDateLocator(minticks=2, maxticks=4)
             self.ax.xaxis.set_major_locator(locator)
             self.ax.xaxis.set_major_formatter(mdates.AutoDateFormatter(locator))
@@ -262,7 +268,7 @@ class BarrelTab(ctk.CTkFrame):
                 leg = self.ax.get_legend()
                 if leg:
                     leg.remove()
-            self.ax.set_ylabel("°C", fontsize=8)
-            self.ax.grid(True, linewidth=0.5)
+            self.ax.set_ylabel("°C", fontsize=8, color=COLORS["text_muted"])
+            self.ax.grid(True, linewidth=0.5, color=COLORS["panel_soft"])
             self.fig.tight_layout()
         self.canvas.draw()

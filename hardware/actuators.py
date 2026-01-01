@@ -158,6 +158,13 @@ class Actuator:
                 print(f"[WARNING] Richiesta fallita: {e}")
                 Actuator.wifi_available = False
 
+    def pulse_valve(self, state, seconds=2):
+        previous = self.get_current_state()
+        self.set_valve(state)
+        time.sleep(seconds)
+        if previous in ("Aperta", "Chiusa"):
+            self.set_valve(previous)
+
     def get_current_state(self):
         stato = Actuator.relay_states.get(self.channel, "Unknown")
         print(f"[DEBUG] Stato attuale di {self.name} (canale {self.channel}): {stato}")

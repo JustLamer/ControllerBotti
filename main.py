@@ -8,28 +8,32 @@ from gui.overview import OverviewFrame
 from gui.barrel_tab import BarrelTab
 from config import load_config, save_config
 from styles import setup_styles
-from utils.logger import log_botte_csv
 from hardware.sensors import SensorManager
 from gui.settings_tab import SettingsTab
 from hardware.actuators import Actuator
+from utils.control import update_botti_state
+from gui.theme import COLORS
 
 import os
 
 ctk.set_appearance_mode("dark")
-ctk.set_default_color_theme("green")
+ctk.set_default_color_theme("blue")
 
 class ModernWineApp(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("Controllo Botti - Modern UI")
-        self.geometry("1200x800")
-        self.minsize(300, 150)
+        self.geometry("1024x600")
+        self.minsize(800, 480)
         setup_styles(self)
         self.wm_attributes("-fullscreen", True)
         self.state("normal")
+        self.configure(fg_color=COLORS["bg"])
 
         # --- Dati/Config ---
         self.botti_data, self.settings = load_config()
+        self.test_mode = False
+        self.update_counter = 0
 
         # Inizializza SensorManager prima della GUI
         user_mapping = self.settings.get("sensors_mapping", None)
@@ -37,18 +41,6 @@ class ModernWineApp(ctk.CTk):
             self.sensor_manager = SensorManager(mapping=user_mapping)
         else:
             self.sensor_manager = SensorManager()
-
-        import datetime
-        for b in self.botti_data.values():
-            now = datetime.datetime.now()
-            if "history" not in b:
-                b["history"] = [(now - datetime.timedelta(minutes=(19 - i) * 2), b["temperatura"]) for i in range(20)]
-            if "valve_history" not in b:
-                b["valve_history"] = []
-            if "forced" not in b:
-                b["forced"] = None
-            if "valvola" not in b or b["valvola"] not in ("Aperta", "Chiusa"):
-                b["valvola"] = "Chiusa"
 
         self.actuators = {nome: Actuator(nome) for nome in self.botti_data}
         # 1. Spegne tutti i relè fisici per partire da uno stato noto
@@ -80,7 +72,13 @@ class ModernWineApp(ctk.CTk):
         self.pages["Panoramica"] = OverviewFrame(self, self)
         for nome in self.botti_data:
             self.pages[nome] = BarrelTab(self, self, nome)
-        self.settings_tab = SettingsTab(self, self.sensor_manager, self.on_mapping_change)
+        self.settings_tab = SettingsTab(
+            self,
+            self.sensor_manager,
+            self.actuators,
+            self.on_mapping_change,
+            self.on_test_mode_change,
+        )
         self.pages["Impostazioni"] = self.settings_tab
 
         self.current_tab = None
@@ -94,6 +92,9 @@ class ModernWineApp(ctk.CTk):
     def on_mapping_change(self):
         save_config(self.botti_data, self.settings)
 
+    def on_test_mode_change(self, enabled):
+        self.test_mode = enabled
+
     def switch_tab(self, tab_name):
         if self.current_tab:
             self.pages[self.current_tab].grid_forget()
@@ -104,46 +105,27 @@ class ModernWineApp(ctk.CTk):
             self.settings_tab.refresh()
 
     def periodic_update(self):
-        import random, datetime
-        now = datetime.datetime.now()
-        for nome, b in self.botti_data.items():
-            b.setdefault("history", []).append((now, b["temperatura"]))
-            b["history"] = b["history"][-100:]
-
-            if b.get("forced", None) in ("Aperta", "Chiusa"):
-                b["valvola"] = b["forced"]
-            else:
-                if b["temperatura"] > b["max_temp"]:
-                    b["valvola"] = "Aperta"
-                elif b["temperatura"] < b["min_temp"]:
-                    b["valvola"] = "Chiusa"
-                else:
-                    if b.get("valvola") not in ("Aperta", "Chiusa"):
-                        b["valvola"] = "Chiusa"
-
-            b.setdefault("valve_history", []).append((now, b["valvola"]))
-            b["valve_history"] = b["valve_history"][-100:]
-
-            #self.actuators[nome].set_valve(b["valvola"])
-
-            log_botte_csv(
-                nome_botte=nome,
-                timestamp=now,
-                temperatura=b["temperatura"],
-                min_temp=b["min_temp"],
-                max_temp=b["max_temp"],
-                valvola=b["valvola"]
-            )
+        state_changed = update_botti_state(
+            self.botti_data,
+            self.settings,
+            self.sensor_manager,
+            self.actuators,
+            test_mode=self.test_mode,
+        )
 
         for page in self.pages.values():
             if hasattr(page, "refresh"):
                 page.refresh()
-        save_config(self.botti_data, self.settings)
-        self.after(5000, self.periodic_update)
+        self.update_counter += 1
+        save_interval = int(self.settings.get("save_interval_s", 30))
+        if self.last_save is None or (self.update_counter * self.settings.get("update_interval_s", 5)) >= save_interval:
+            save_config(self.botti_data, self.settings)
+            self.update_counter = 0
+        if state_changed:
+            save_config(self.botti_data, self.settings)
 
-        # Prepara il dict degli stati desiderati
-        state_dict = {nome: b["valvola"] for nome, b in self.botti_data.items()}
-        Actuator.batch_set_valves(state_dict, actuators=self.actuators)
+        next_interval_ms = int(self.settings.get("update_interval_s", 5) * 1000)
+        self.after(next_interval_ms, self.periodic_update)
 
 if __name__ == "__main__":
     ModernWineApp().mainloop()
