@@ -1,4 +1,5 @@
 import sys
+import os
 sys.path.append("/home/tritecc/controller")
 
 import customtkinter as ctk
@@ -13,8 +14,6 @@ from gui.settings_tab import SettingsTab
 from hardware.actuators import Actuator
 from utils.control import update_botti_state
 from gui.theme import COLORS
-
-import os
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
@@ -42,7 +41,8 @@ class ModernWineApp(ctk.CTk):
         else:
             self.sensor_manager = SensorManager()
 
-        self.actuators = {nome: Actuator(nome) for nome in self.botti_data}
+        use_rs485 = os.name != "nt" and os.environ.get("USE_RS485", "1") == "1"
+        self.actuators = {nome: Actuator(nome, use_rs485=use_rs485) for nome in self.botti_data}
         # 1. Spegne tutti i relè fisici per partire da uno stato noto
         Actuator.all_off(use_rs485=True)
 

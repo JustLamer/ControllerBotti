@@ -2,6 +2,16 @@ from .pinmap import BARREL_PINMAP
 import requests
 import serial  # Per RS485
 import time
+import os
+import sys
+
+USE_MOCK_ACTUATOR = (
+    os.environ.get("USE_MOCK_ACTUATOR", "0") == "1" or
+    "--mock-actuator" in sys.argv
+)
+
+if "--mock-actuator" in sys.argv:
+    sys.argv.remove("--mock-actuator")
 
 def _modbus_crc(data: bytes) -> bytes:
     crc = 0xFFFF
@@ -36,10 +46,10 @@ class Actuator:
     def __init__(self, barrel_name, use_rs485=True, serial_device="/dev/ttyUSB0", baudrate=9600):
         self.name = barrel_name
         self.channel = BARREL_PINMAP[barrel_name]["valve_pin"]
-        self.use_rs485 = use_rs485
+        self.use_rs485 = use_rs485 and not USE_MOCK_ACTUATOR
         Actuator._last_rs485 = use_rs485  # Ricorda l'ultima modalità usata
 
-        if use_rs485 and Actuator._serial_instance is None:
+        if self.use_rs485 and Actuator._serial_instance is None:
             try:
                 Actuator._serial_instance = serial.Serial(
                     port=serial_device,
@@ -51,8 +61,9 @@ class Actuator:
                 )
                 print("[DEBUG] Porta RS485 aperta:", serial_device)
             except Exception as e:
-                print("[ERROR] Impossibile aprire la porta RS485:", e)
-                raise
+                print("[WARNING] RS485 non disponibile, avvio in modalità simulata:", e)
+                self.use_rs485 = False
+                Actuator._last_rs485 = False
 
     @staticmethod
     def batch_set_valves(state_dict, actuators=None, delay=0.5):
@@ -85,6 +96,9 @@ class Actuator:
 
     @staticmethod
     def all_off(use_rs485=None):
+        if USE_MOCK_ACTUATOR:
+            Actuator._set_all_closed()
+            return
         if use_rs485 is None:
             use_rs485 = Actuator._last_rs485
         if not use_rs485:
@@ -116,6 +130,10 @@ class Actuator:
     def set_valve(self, state):
         if state not in ("Aperta", "Chiusa"):
             print(f"[ERROR] Stato non valido: {state}")
+            return
+
+        if USE_MOCK_ACTUATOR:
+            Actuator.relay_states[self.channel] = state
             return
 
         if not self.use_rs485 and not Actuator.wifi_available:
