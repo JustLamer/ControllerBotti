@@ -1,13 +1,28 @@
 import customtkinter as ctk
-from gui.theme import COLORS, font
+from gui.theme import COLORS, FONT_SIZES, RADIUS, SPACING, font
 
 class Sidebar(ctk.CTkFrame):
     def __init__(self, master, tab_list, on_tab_click, **kwargs):
-        super().__init__(master, width=70, fg_color=COLORS["panel"], **kwargs)
+        super().__init__(master, width=96, fg_color=COLORS["panel"], **kwargs)
         self.tab_list = tab_list
         self.on_tab_click = on_tab_click
         self.btns = {}
         self.selected_tab = None
+
+        header = ctk.CTkFrame(self, fg_color="transparent")
+        header.pack(pady=(SPACING["lg"], SPACING["sm"]), padx=SPACING["sm"], fill="x")
+        ctk.CTkLabel(
+            header,
+            text="Botti",
+            font=font(size=FONT_SIZES["lg"], weight="bold"),
+            text_color=COLORS["text"],
+        ).pack(anchor="w")
+        ctk.CTkLabel(
+            header,
+            text="Controllo",
+            font=font(size=FONT_SIZES["xs"]),
+            text_color=COLORS["text_muted"],
+        ).pack(anchor="w")
 
         for label, icon in self.tab_list:
             # "Panoramica": solo testo, senza icona
@@ -16,14 +31,14 @@ class Sidebar(ctk.CTkFrame):
                     self,
                     text=label,
                     image=None,
-                    width=64,
-                    height=38,
-                    font=font(size=12, weight="bold"),
+                    width=78,
+                    height=40,
+                    font=font(size=FONT_SIZES["sm"], weight="bold"),
                     fg_color=COLORS["panel_alt"],
                     hover_color=COLORS["panel_soft"],
-                    corner_radius=12,
+                    corner_radius=RADIUS["md"],
                     border_width=1,
-                    border_color=COLORS["accent"],
+                    border_color=COLORS["border"],
                     text_color=COLORS["text"],
                     anchor="center",
                     command=lambda l=label: self._on_tab_click(l)
@@ -37,30 +52,34 @@ class Sidebar(ctk.CTkFrame):
                     self,
                     text=num,
                     image=icon,
-                    width=54,
-                    height=50,
-                    font=font(size=12, weight="bold"),
+                    width=78,
+                    height=52,
+                    font=font(size=FONT_SIZES["sm"], weight="bold"),
                     compound="left",   # numero accanto all'icona
                     fg_color=COLORS["panel_alt"],
                     hover_color=COLORS["panel_soft"],
-                    corner_radius=12,
+                    corner_radius=RADIUS["md"],
                     border_width=1,
-                    border_color=COLORS["accent"],
+                    border_color=COLORS["border"],
                     text_color=COLORS["text"],
                     anchor="center",
                     command=lambda l=label: self._on_tab_click(l)
                 )
-            btn.pack(pady=6, padx=6, fill="x")
+            btn.pack(pady=SPACING["sm"], padx=SPACING["sm"], fill="x")
             self.btns[label] = btn
 
     def _on_tab_click(self, label):
         btn = self.btns[label]
-        btn.configure(font=font(size=13, weight="bold"))
-        self.after(130, lambda: btn.configure(font=font(size=12, weight="bold")))
+        btn.configure(font=font(size=FONT_SIZES["md"], weight="bold"))
+        self.after(130, lambda: btn.configure(font=font(size=FONT_SIZES["sm"], weight="bold")))
         self.select(label)
         self.on_tab_click(label)
 
     def select(self, label):
         for l, btn in self.btns.items():
-            btn.configure(fg_color=COLORS["accent"] if l == label else COLORS["panel_alt"])
+            btn.configure(
+                fg_color=COLORS["accent"] if l == label else COLORS["panel_alt"],
+                border_color=COLORS["accent"] if l == label else COLORS["border"],
+                text_color=COLORS["panel"] if l == label else COLORS["text"],
+            )
         self.selected_tab = label

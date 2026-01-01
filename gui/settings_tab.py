@@ -1,7 +1,7 @@
 import customtkinter as ctk
 import threading
 from config import save_config
-from gui.theme import COLORS, font
+from gui.theme import COLORS, FONT_SIZES, RADIUS, SPACING, font
 
 class SettingsTab(ctk.CTkFrame):
     def __init__(self, master, sensor_manager, actuators, on_mapping_change, on_test_mode_change, **kwargs):
@@ -30,10 +30,16 @@ class SettingsTab(ctk.CTkFrame):
 
         ctk.CTkLabel(
             self,
-            text="Impostazioni e associazioni",
-            font=font(size=20, weight="bold"),
+            text="Impostazioni",
+            font=font(size=FONT_SIZES["xl"], weight="bold"),
             text_color=COLORS["text"],
-        ).grid(row=0, column=0, columnspan=4, pady=(18, 8), padx=14, sticky="w")
+        ).grid(row=0, column=0, columnspan=4, pady=(SPACING["lg"], SPACING["sm"]), padx=SPACING["lg"], sticky="w")
+        ctk.CTkLabel(
+            self,
+            text="Associa sensori, regola i tempi di controllo e verifica l'hardware.",
+            font=font(size=FONT_SIZES["sm"]),
+            text_color=COLORS["text_muted"],
+        ).grid(row=1, column=0, columnspan=4, padx=SPACING["lg"], sticky="w")
 
         serials = self.sensor_manager.rescan_serials() or [""]
         if "test" not in serials:
@@ -44,171 +50,209 @@ class SettingsTab(ctk.CTkFrame):
         if botti:
             self.test_barrel_var.set(botti[0])
 
+        mapping_card = ctk.CTkFrame(
+            self,
+            fg_color=COLORS["panel_alt"],
+            corner_radius=RADIUS["md"],
+            border_width=1,
+            border_color=COLORS["border"],
+        )
+        mapping_card.grid(row=2, column=0, columnspan=4, padx=SPACING["lg"], pady=(SPACING["sm"], SPACING["md"]), sticky="ew")
+        mapping_card.grid_columnconfigure(1, weight=1)
+        ctk.CTkLabel(
+            mapping_card,
+            text="Associa ogni botte a una sonda",
+            font=font(size=FONT_SIZES["md"], weight="bold"),
+            text_color=COLORS["text"],
+        ).grid(row=0, column=0, columnspan=2, sticky="w", padx=SPACING["md"], pady=(SPACING["sm"], SPACING["xs"]))
+
         for i, botte in enumerate(botti):
-            ctk.CTkLabel(self, text=f"{botte}:", width=90, anchor="e", font=font(size=14)).grid(
-                row=1 + i, column=0, padx=(14, 8), pady=6, sticky="e")
+            ctk.CTkLabel(mapping_card, text=f"{botte}:", width=90, anchor="e", font=font(size=FONT_SIZES["sm"])).grid(
+                row=1 + i, column=0, padx=(SPACING["md"], SPACING["sm"]), pady=SPACING["xs"], sticky="e")
             selected_serial = self.master.settings.get("sensors_mapping", {}).get(botte, "")
             var = ctk.StringVar(value=selected_serial)
             cb = ctk.CTkComboBox(
-                self, values=serials, variable=var, width=240, font=font(size=14),
+                mapping_card, values=serials, variable=var, width=240, font=font(size=FONT_SIZES["sm"]),
                 command=lambda _, b=botte, v=var: self.change_assoc(b, v)
             )
-            cb.grid(row=1 + i, column=1, padx=(0, 20), pady=6, sticky="w")
+            cb.grid(row=1 + i, column=1, padx=(0, SPACING["md"]), pady=SPACING["xs"], sticky="w")
             self.combo_vars[botte] = var
             self.combo_widgets[botte] = cb
 
         # Titolo e serial disponibili
-        offset = 1 + len(botti)
-        ctk.CTkLabel(self, text="Serial disponibili:", font=font(size=13)).grid(
-            row=offset, column=0, columnspan=2, pady=(22, 4), sticky="w", padx=14)
+        serial_card = ctk.CTkFrame(
+            self,
+            fg_color=COLORS["panel_alt"],
+            corner_radius=RADIUS["md"],
+            border_width=1,
+            border_color=COLORS["border"],
+        )
+        serial_card.grid(row=3, column=0, columnspan=4, padx=SPACING["lg"], pady=(0, SPACING["md"]), sticky="ew")
+        ctk.CTkLabel(serial_card, text="Serial disponibili", font=font(size=FONT_SIZES["sm"], weight="bold")).grid(
+            row=0, column=0, pady=(SPACING["sm"], SPACING["xs"]), sticky="w", padx=SPACING["md"])
 
         for j, sid in enumerate(serials):
             if sid:
-                label = ctk.CTkLabel(self, text=sid, font=font(size=12), text_color=COLORS["text_muted"])
-                label.grid(row=offset + 1 + j, column=0, columnspan=2, sticky="w", padx=26)
+                label = ctk.CTkLabel(serial_card, text=sid, font=font(size=FONT_SIZES["xs"]), text_color=COLORS["text_muted"])
+                label.grid(row=1 + j, column=0, sticky="w", padx=SPACING["md"])
                 self.serial_labels.append(label)
 
-        # Bottone di refresh
         refresh_btn = ctk.CTkButton(
-            self,
+            serial_card,
             text="🔄 Rileva sensori",
-            font=font(size=13),
+            font=font(size=FONT_SIZES["sm"]),
             fg_color=COLORS["accent"],
             hover_color=COLORS["accent_dark"],
             command=self.refresh,
         )
-        refresh_btn.grid(row=offset + len(serials) + 2, column=0, pady=(20, 10), padx=14, sticky="w")
+        refresh_btn.grid(row=1 + len(serials), column=0, pady=(SPACING["sm"], SPACING["md"]), padx=SPACING["md"], sticky="w")
 
-        self._build_control_settings(offset + len(serials) + 3)
-        self._build_diagnostics(offset + len(serials) + 7)
+        self._build_control_settings(4)
+        self._build_diagnostics(5)
 
     def _build_control_settings(self, start_row):
-        ctk.CTkLabel(
+        card = ctk.CTkFrame(
             self,
+            fg_color=COLORS["panel_alt"],
+            corner_radius=RADIUS["md"],
+            border_width=1,
+            border_color=COLORS["border"],
+        )
+        card.grid(row=start_row, column=0, columnspan=4, padx=SPACING["lg"], pady=(0, SPACING["md"]), sticky="ew")
+        ctk.CTkLabel(
+            card,
             text="Controllo automatico",
-            font=font(size=16, weight="bold"),
+            font=font(size=FONT_SIZES["md"], weight="bold"),
             text_color=COLORS["text"],
-        ).grid(row=start_row, column=0, columnspan=3, sticky="w", padx=14, pady=(16, 8))
+        ).grid(row=0, column=0, columnspan=2, sticky="w", padx=SPACING["md"], pady=(SPACING["sm"], SPACING["xs"]))
 
         self.update_interval_var.set(str(self.master.settings.get("update_interval_s", 5)))
         self.min_switch_interval_var.set(str(self.master.settings.get("min_switch_interval_s", 60)))
         self.save_interval_var.set(str(self.master.settings.get("save_interval_s", 30)))
 
-        ctk.CTkLabel(self, text="Aggiornamento (s):", font=font(size=12)).grid(
-            row=start_row + 1, column=0, sticky="e", padx=(14, 6), pady=4
+        ctk.CTkLabel(card, text="Aggiornamento (s):", font=font(size=FONT_SIZES["sm"])).grid(
+            row=1, column=0, sticky="e", padx=(SPACING["md"], SPACING["sm"]), pady=SPACING["xs"]
         )
-        ctk.CTkEntry(self, textvariable=self.update_interval_var, width=70).grid(
-            row=start_row + 1, column=1, sticky="w", pady=4
-        )
-
-        ctk.CTkLabel(self, text="Intervallo min switch (s):", font=font(size=12)).grid(
-            row=start_row + 2, column=0, sticky="e", padx=(14, 6), pady=4
-        )
-        ctk.CTkEntry(self, textvariable=self.min_switch_interval_var, width=70).grid(
-            row=start_row + 2, column=1, sticky="w", pady=4
+        ctk.CTkEntry(card, textvariable=self.update_interval_var, width=80).grid(
+            row=1, column=1, sticky="w", pady=SPACING["xs"]
         )
 
-        ctk.CTkLabel(self, text="Salvataggio config (s):", font=font(size=12)).grid(
-            row=start_row + 3, column=0, sticky="e", padx=(14, 6), pady=4
+        ctk.CTkLabel(card, text="Intervallo min switch (s):", font=font(size=FONT_SIZES["sm"])).grid(
+            row=2, column=0, sticky="e", padx=(SPACING["md"], SPACING["sm"]), pady=SPACING["xs"]
         )
-        ctk.CTkEntry(self, textvariable=self.save_interval_var, width=70).grid(
-            row=start_row + 3, column=1, sticky="w", pady=4
+        ctk.CTkEntry(card, textvariable=self.min_switch_interval_var, width=80).grid(
+            row=2, column=1, sticky="w", pady=SPACING["xs"]
+        )
+
+        ctk.CTkLabel(card, text="Salvataggio config (s):", font=font(size=FONT_SIZES["sm"])).grid(
+            row=3, column=0, sticky="e", padx=(SPACING["md"], SPACING["sm"]), pady=SPACING["xs"]
+        )
+        ctk.CTkEntry(card, textvariable=self.save_interval_var, width=80).grid(
+            row=3, column=1, sticky="w", pady=SPACING["xs"]
         )
 
         save_btn = ctk.CTkButton(
-            self,
+            card,
             text="Salva impostazioni",
-            font=font(size=12),
+            font=font(size=FONT_SIZES["sm"]),
             fg_color=COLORS["accent"],
             hover_color=COLORS["accent_dark"],
             command=self.save_timing_settings,
         )
-        save_btn.grid(row=start_row + 4, column=0, padx=14, pady=(8, 4), sticky="w")
+        save_btn.grid(row=4, column=0, padx=SPACING["md"], pady=(SPACING["sm"], SPACING["sm"]), sticky="w")
 
-        self.status_label = ctk.CTkLabel(self, text="", font=font(size=11), text_color=COLORS["text_muted"])
-        self.status_label.grid(row=start_row + 4, column=1, padx=6, sticky="w")
+        self.status_label = ctk.CTkLabel(card, text="", font=font(size=FONT_SIZES["xs"]), text_color=COLORS["text_muted"])
+        self.status_label.grid(row=4, column=1, padx=SPACING["sm"], sticky="w")
 
     def _build_diagnostics(self, start_row):
-        ctk.CTkLabel(
+        card = ctk.CTkFrame(
             self,
+            fg_color=COLORS["panel_alt"],
+            corner_radius=RADIUS["md"],
+            border_width=1,
+            border_color=COLORS["border"],
+        )
+        card.grid(row=start_row, column=0, columnspan=4, padx=SPACING["lg"], pady=(0, SPACING["md"]), sticky="ew")
+        ctk.CTkLabel(
+            card,
             text="Diagnostica e test installatore",
-            font=font(size=16, weight="bold"),
+            font=font(size=FONT_SIZES["md"], weight="bold"),
             text_color=COLORS["text"],
-        ).grid(row=start_row, column=0, columnspan=3, sticky="w", padx=14, pady=(16, 6))
+        ).grid(row=0, column=0, columnspan=3, sticky="w", padx=SPACING["md"], pady=(SPACING["sm"], SPACING["xs"]))
 
         test_switch = ctk.CTkSwitch(
-            self,
+            card,
             text="Abilita modalità test (disabilita controllo automatico)",
             variable=self.test_mode_var,
             command=self.toggle_test_mode,
-            font=font(size=12),
+            font=font(size=FONT_SIZES["sm"]),
         )
-        test_switch.grid(row=start_row + 1, column=0, columnspan=3, sticky="w", padx=14, pady=4)
+        test_switch.grid(row=1, column=0, columnspan=3, sticky="w", padx=SPACING["md"], pady=SPACING["xs"])
 
         sensor_btn = ctk.CTkButton(
-            self,
+            card,
             text="Test sensori",
-            font=font(size=12),
+            font=font(size=FONT_SIZES["sm"]),
             fg_color=COLORS["accent"],
             hover_color=COLORS["accent_dark"],
             command=self.run_sensor_test,
         )
-        sensor_btn.grid(row=start_row + 2, column=0, padx=14, pady=4, sticky="w")
+        sensor_btn.grid(row=2, column=0, padx=SPACING["md"], pady=SPACING["xs"], sticky="w")
         self.test_buttons.append(sensor_btn)
 
-        ctk.CTkLabel(self, text="Test valvola:", font=font(size=12)).grid(
-            row=start_row + 2, column=1, sticky="e", padx=(6, 4)
+        ctk.CTkLabel(card, text="Test valvola:", font=font(size=FONT_SIZES["sm"])).grid(
+            row=2, column=1, sticky="e", padx=(SPACING["sm"], SPACING["xs"])
         )
         barrel_menu = ctk.CTkComboBox(
-            self,
+            card,
             values=list(self.master.botti_data.keys()),
             variable=self.test_barrel_var,
             width=140,
-            font=font(size=12),
+            font=font(size=FONT_SIZES["sm"]),
         )
-        barrel_menu.grid(row=start_row + 2, column=2, sticky="w", padx=4, pady=4)
+        barrel_menu.grid(row=2, column=2, sticky="w", padx=SPACING["xs"], pady=SPACING["xs"])
 
         open_btn = ctk.CTkButton(
-            self,
+            card,
             text="Apri 2s",
-            font=font(size=12),
+            font=font(size=FONT_SIZES["sm"]),
             fg_color=COLORS["warning"],
             hover_color=COLORS["accent_dark"],
             command=lambda: self.run_valve_test("Aperta"),
         )
-        open_btn.grid(row=start_row + 3, column=0, padx=14, pady=4, sticky="w")
+        open_btn.grid(row=3, column=0, padx=SPACING["md"], pady=SPACING["xs"], sticky="w")
         self.test_buttons.append(open_btn)
 
         close_btn = ctk.CTkButton(
-            self,
+            card,
             text="Chiudi 2s",
-            font=font(size=12),
+            font=font(size=FONT_SIZES["sm"]),
             fg_color=COLORS["panel_soft"],
             hover_color=COLORS["accent_dark"],
             command=lambda: self.run_valve_test("Chiusa"),
         )
-        close_btn.grid(row=start_row + 3, column=1, padx=6, pady=4, sticky="w")
+        close_btn.grid(row=3, column=1, padx=SPACING["sm"], pady=SPACING["xs"], sticky="w")
         self.test_buttons.append(close_btn)
 
         cycle_btn = ctk.CTkButton(
-            self,
+            card,
             text="Ciclo completo",
-            font=font(size=12),
+            font=font(size=FONT_SIZES["sm"]),
             fg_color=COLORS["accent"],
             hover_color=COLORS["accent_dark"],
             command=self.run_cycle_test,
         )
-        cycle_btn.grid(row=start_row + 3, column=2, padx=4, pady=4, sticky="w")
+        cycle_btn.grid(row=3, column=2, padx=SPACING["xs"], pady=SPACING["xs"], sticky="w")
         self.test_buttons.append(cycle_btn)
 
         self.test_output = ctk.CTkTextbox(
-            self,
+            card,
             width=520,
             height=110,
             fg_color=COLORS["panel_alt"],
             text_color=COLORS["text"],
         )
-        self.test_output.grid(row=start_row + 4, column=0, columnspan=3, padx=14, pady=(8, 12), sticky="ew")
+        self.test_output.grid(row=4, column=0, columnspan=3, padx=SPACING["md"], pady=(SPACING["sm"], SPACING["md"]), sticky="ew")
         self._set_test_controls_state(False)
 
     def refresh(self):

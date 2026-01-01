@@ -6,7 +6,7 @@ import matplotlib.dates as mdates
 import datetime
 from config import save_config
 from utils.logger import log_event
-from gui.theme import COLORS, font
+from gui.theme import COLORS, FONT_SIZES, RADIUS, SPACING, font
 
 DELTA_MAP = {
     "Tutto": None,
@@ -37,31 +37,48 @@ class BarrelTab(ctk.CTkFrame):
         self.show_legend = True
 
         # Font settings
-        font_xs = font(size=11)
-        font_s = font(size=12)
-        font_m = font(size=13, weight="bold")
-        font_l = font(size=16, weight="bold")
+        font_xs = font(size=FONT_SIZES["xs"])
+        font_s = font(size=FONT_SIZES["sm"])
+        font_m = font(size=FONT_SIZES["md"], weight="bold")
+        font_l = font(size=FONT_SIZES["lg"], weight="bold")
 
         # HEADER: titolo + dot + temperatura + valvola + lock su una riga compatta
         header = ctk.CTkFrame(self, fg_color="transparent")
-        header.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(8, 2), padx=(3, 3))
-        header.grid_columnconfigure((0, 1, 2, 3, 4), weight=0)
-        self.title_lbl = ctk.CTkLabel(header, text=nome, font=font_l)
-        self.title_lbl.grid(row=0, column=0, sticky="w", padx=(4, 4))
-        self.dot_lbl = ctk.CTkLabel(header, text="●", font=font(size=18), text_color=COLORS["success"])
-        self.dot_lbl.grid(row=0, column=1, sticky="w", padx=(2, 4))
-        self.temp_lbl = ctk.CTkLabel(header, text="", font=font_l)
-        self.temp_lbl.grid(row=0, column=2, sticky="w", padx=(4, 2))
-        self.valve_lbl = ctk.CTkLabel(header, text="", font=font_m)
-        self.valve_lbl.grid(row=0, column=3, sticky="w", padx=(4, 2))
-        self.lock_lbl = ctk.CTkLabel(header, image=None, text="", width=18)
-        self.lock_lbl.grid(row=0, column=4, sticky="w", padx=(2, 2))
+        header.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(SPACING["sm"], SPACING["xs"]), padx=(SPACING["sm"], SPACING["sm"]))
+        header.grid_columnconfigure(0, weight=1)
+        title_block = ctk.CTkFrame(header, fg_color="transparent")
+        title_block.grid(row=0, column=0, sticky="w")
+        self.title_lbl = ctk.CTkLabel(title_block, text=nome, font=font(size=FONT_SIZES["xl"], weight="bold"))
+        self.title_lbl.grid(row=0, column=0, sticky="w")
+        ctk.CTkLabel(
+            title_block,
+            text="Controllo singola botte",
+            font=font(size=FONT_SIZES["sm"]),
+            text_color=COLORS["text_muted"],
+        ).grid(row=1, column=0, sticky="w")
+
+        status_card = ctk.CTkFrame(
+            header,
+            fg_color=COLORS["panel_alt"],
+            corner_radius=RADIUS["md"],
+            border_width=1,
+            border_color=COLORS["border"],
+        )
+        status_card.grid(row=0, column=1, padx=(SPACING["sm"], 0), sticky="e")
+        self.dot_lbl = ctk.CTkLabel(status_card, text="●", font=font(size=18), text_color=COLORS["success"])
+        self.dot_lbl.grid(row=0, column=0, padx=(SPACING["sm"], 4), pady=SPACING["sm"])
+        self.temp_lbl = ctk.CTkLabel(status_card, text="", font=font(size=FONT_SIZES["lg"], weight="bold"))
+        self.temp_lbl.grid(row=0, column=1, padx=SPACING["xs"], pady=SPACING["sm"])
+        self.valve_lbl = ctk.CTkLabel(status_card, text="", font=font_m)
+        self.valve_lbl.grid(row=0, column=2, padx=SPACING["xs"], pady=SPACING["sm"])
+        self.lock_lbl = ctk.CTkLabel(status_card, image=None, text="", width=18)
+        self.lock_lbl.grid(row=0, column=3, padx=(SPACING["xs"], SPACING["sm"]), pady=SPACING["sm"])
         img_lock = Image.open("assets/lock.png").resize((16, 16))
         self.lock_icon = ctk.CTkImage(light_image=img_lock, dark_image=img_lock)
 
         # ComboBox affiancati
         cb_frame = ctk.CTkFrame(self, fg_color="transparent")
-        cb_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(2, 6), padx=(2, 2))
+        cb_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(SPACING["xs"], SPACING["sm"]), padx=(SPACING["sm"], SPACING["sm"]))
         cb_frame.grid_columnconfigure((0, 1, 2, 3, 4), weight=0)
         ctk.CTkLabel(cb_frame, text="Modalità:", font=font_s).grid(row=0, column=0, sticky="e", padx=2)
         self.mode_var = ctk.StringVar()
@@ -80,18 +97,26 @@ class BarrelTab(ctk.CTkFrame):
         self.legend_btn = ctk.CTkButton(
             cb_frame,
             text="Legenda: ON",
-            width=62,
+            width=74,
             font=font_xs,
-            height=24,
+            height=26,
             command=self.toggle_legend,
-            fg_color=COLORS["accent"],
-            hover_color=COLORS["accent_dark"],
+            fg_color=COLORS["panel_alt"],
+            hover_color=COLORS["panel_soft"],
+            border_width=1,
+            border_color=COLORS["border"],
         )
         self.legend_btn.grid(row=0, column=4, padx=(8, 0), sticky="w")
 
         # Soglie e step (in una riga compatta)
-        soglie_frame = ctk.CTkFrame(self, fg_color=COLORS["panel_alt"], corner_radius=10)
-        soglie_frame.grid(row=2, column=0, sticky="ew", padx=4, pady=6)
+        soglie_frame = ctk.CTkFrame(
+            self,
+            fg_color=COLORS["panel_alt"],
+            corner_radius=RADIUS["md"],
+            border_width=1,
+            border_color=COLORS["border"],
+        )
+        soglie_frame.grid(row=2, column=0, sticky="ew", padx=SPACING["sm"], pady=SPACING["sm"])
         soglie_frame.grid_columnconfigure((0, 1, 2, 3, 4, 5, 6), weight=0)
         ctk.CTkLabel(soglie_frame, text="Min:", font=font_xs, text_color=COLORS["info"]).grid(row=0, column=0)
         btn_minm = ctk.CTkButton(soglie_frame, text="-", width=18, height=18, font=font_xs,
@@ -123,12 +148,18 @@ class BarrelTab(ctk.CTkFrame):
         self.step_menu.grid(row=0, column=9, padx=2)
 
         # Grafico (allargato)
-        right = ctk.CTkFrame(self, fg_color='transparent')
-        right.grid(row=3, column=0, sticky="nsew", padx=3, pady=5)
+        right = ctk.CTkFrame(
+            self,
+            fg_color=COLORS["panel_alt"],
+            corner_radius=RADIUS["md"],
+            border_width=1,
+            border_color=COLORS["border"],
+        )
+        right.grid(row=3, column=0, sticky="nsew", padx=SPACING["sm"], pady=SPACING["sm"])
         # Nuove dimensioni: larghezza +40%, altezza +20%
         self.fig, self.ax = plt.subplots(figsize=(6, 2.8))
         self.canvas = FigureCanvasTkAgg(self.fig, master=right)
-        self.canvas.get_tk_widget().pack(fill="both", expand=True, padx=0, pady=0)
+        self.canvas.get_tk_widget().pack(fill="both", expand=True, padx=SPACING["xs"], pady=SPACING["xs"])
 
         self.refresh()
 

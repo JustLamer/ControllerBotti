@@ -1,6 +1,6 @@
 import customtkinter as ctk
 from PIL import Image
-from gui.theme import COLORS, font
+from gui.theme import COLORS, FONT_SIZES, RADIUS, SPACING, font
 
 
 class OverviewFrame(ctk.CTkFrame):
@@ -20,8 +20,24 @@ class OverviewFrame(ctk.CTkFrame):
         barrel_img_pil = Image.open(barrel_img_path).resize((IMG_W, IMG_H), Image.LANCZOS)
         barrel_ctk_img = ctk.CTkImage(light_image=barrel_img_pil, dark_image=barrel_img_pil, size=(IMG_W, IMG_H))
 
+        header = ctk.CTkFrame(self, fg_color="transparent")
+        header.grid(row=0, column=0, sticky="ew", padx=SPACING["lg"], pady=(SPACING["lg"], SPACING["sm"]))
+        header.grid_columnconfigure(0, weight=1)
+        ctk.CTkLabel(
+            header,
+            text="Panoramica",
+            font=font(size=FONT_SIZES["xl"], weight="bold"),
+            text_color=COLORS["text"],
+        ).grid(row=0, column=0, sticky="w")
+        ctk.CTkLabel(
+            header,
+            text="Stato rapido delle botti e soglie principali",
+            font=font(size=FONT_SIZES["sm"]),
+            text_color=COLORS["text_muted"],
+        ).grid(row=1, column=0, sticky="w", pady=(2, 0))
+
         center_frame = ctk.CTkFrame(self, fg_color="transparent")
-        center_frame.grid(row=0, column=0, padx=10, pady=14, sticky="nsew")
+        center_frame.grid(row=1, column=0, padx=SPACING["lg"], pady=SPACING["sm"], sticky="nsew")
         center_frame.grid_columnconfigure((0, 1, 2), weight=0)
         center_frame.grid_rowconfigure(0, weight=1)
 
@@ -34,8 +50,10 @@ class OverviewFrame(ctk.CTkFrame):
                 center_frame,
                 width=FRAME_W,
                 height=FRAME_H,
-                corner_radius=18,
+                corner_radius=RADIUS["lg"],
                 fg_color=COLORS["panel_alt"],
+                border_width=1,
+                border_color=COLORS["border"],
             )
             bg_frame.grid(row=0, column=idx, padx=6, pady=6, sticky="n")
             bg_frame.grid_propagate(False)
@@ -45,19 +63,13 @@ class OverviewFrame(ctk.CTkFrame):
             border_lbl.place(relx=0.5, rely=0.5, anchor="center")
 
             # Dati sopra
-            dot = ctk.CTkLabel(
-                bg_frame,
-                text="●",
-                font=font(size=24),
-                text_color=COLORS["text"],
-                fg_color="transparent",
-            )
+            dot = ctk.CTkLabel(bg_frame, text="●", font=font(size=24), text_color=COLORS["text"], fg_color="transparent")
             dot.place(relx=0.5, rely=0.15, anchor="center")
 
             temp_lbl = ctk.CTkLabel(
                 bg_frame,
                 text=f"{b['temperatura']:.1f} °C",
-                font=font(size=20, weight="bold"),
+                font=font(size=FONT_SIZES["lg"], weight="bold"),
                 text_color=COLORS["text"],
                 fg_color="transparent"
             )
@@ -66,7 +78,7 @@ class OverviewFrame(ctk.CTkFrame):
             valve_lbl = ctk.CTkLabel(
                 bg_frame,
                 text=f"Valvola: {b['valvola']}",
-                font=font(size=12),
+                font=font(size=FONT_SIZES["sm"]),
                 text_color=COLORS["text_muted"],
                 fg_color="transparent"
             )
@@ -80,10 +92,10 @@ class OverviewFrame(ctk.CTkFrame):
             min_lbl = ctk.CTkLabel(
                 bg_frame,
                 text=f"{b['min_temp']:.1f}",
-                font=font(size=10, weight="bold"),
+                font=font(size=FONT_SIZES["xs"], weight="bold"),
                 text_color=COLORS["info"],
                 fg_color=COLORS["panel_soft"],
-                corner_radius=8,
+                corner_radius=RADIUS["sm"],
                 width=42,
                 height=24,
                 anchor="center",
@@ -94,10 +106,10 @@ class OverviewFrame(ctk.CTkFrame):
             max_lbl = ctk.CTkLabel(
                 bg_frame,
                 text=f"{b['max_temp']:.1f}",
-                font=font(size=10, weight="bold"),
+                font=font(size=FONT_SIZES["xs"], weight="bold"),
                 text_color=COLORS["danger"],
                 fg_color=COLORS["panel_soft"],
-                corner_radius=8,
+                corner_radius=RADIUS["sm"],
                 width=42,
                 height=24,
                 anchor="center",
