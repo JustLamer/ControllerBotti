@@ -81,9 +81,19 @@ class SettingsTab(ctk.CTkFrame):
                 height=42,
                 font=font(size=FONT_SIZES["sm"]),
                 dropdown_font=font(size=FONT_SIZES["sm"]),
-                command=lambda _, b=botte, v=var: self.change_assoc(b, v)
             )
             cb.grid(row=1 + i, column=1, padx=(0, SPACING["md"]), pady=SPACING["xs"], sticky="w")
+            apply_btn = ctk.CTkButton(
+                mapping_card,
+                text="Applica",
+                font=font(size=FONT_SIZES["sm"]),
+                fg_color=COLORS["accent"],
+                hover_color=COLORS["accent_dark"],
+                height=42,
+                width=120,
+                command=lambda b=botte: self.change_assoc(b, self.combo_vars[b]),
+            )
+            apply_btn.grid(row=1 + i, column=2, padx=(0, SPACING["md"]), pady=SPACING["xs"], sticky="w")
             self.combo_vars[botte] = var
             self.combo_widgets[botte] = cb
 
