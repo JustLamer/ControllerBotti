@@ -98,7 +98,7 @@ class ModernWineApp(ctk.CTk):
     def switch_tab(self, tab_name):
         if self.current_tab:
             self.pages[self.current_tab].grid_forget()
-        self.pages[tab_name].grid(row=0, column=1, sticky="nsew", padx=28, pady=28)
+        self.pages[tab_name].grid(row=0, column=1, sticky="nsew", padx=18, pady=18)
         self.current_tab = tab_name
         self.sidebar.select(tab_name)
         if tab_name == "Impostazioni":

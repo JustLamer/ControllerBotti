@@ -33,13 +33,13 @@ class SettingsTab(ctk.CTkFrame):
             text="Impostazioni",
             font=font(size=FONT_SIZES["xl"], weight="bold"),
             text_color=COLORS["text"],
-        ).grid(row=0, column=0, columnspan=4, pady=(SPACING["lg"], SPACING["sm"]), padx=SPACING["lg"], sticky="w")
+        ).grid(row=0, column=0, columnspan=4, pady=(SPACING["lg"], SPACING["sm"]), padx=SPACING["xl"], sticky="w")
         ctk.CTkLabel(
             self,
             text="Associa sensori, regola i tempi di controllo e verifica l'hardware.",
-            font=font(size=FONT_SIZES["sm"]),
+            font=font(size=FONT_SIZES["md"]),
             text_color=COLORS["text_muted"],
-        ).grid(row=1, column=0, columnspan=4, padx=SPACING["lg"], sticky="w")
+        ).grid(row=1, column=0, columnspan=4, padx=SPACING["xl"], sticky="w")
 
         serials = self.sensor_manager.rescan_serials() or [""]
         if "test" not in serials:
@@ -57,7 +57,7 @@ class SettingsTab(ctk.CTkFrame):
             border_width=1,
             border_color=COLORS["border"],
         )
-        mapping_card.grid(row=2, column=0, columnspan=4, padx=SPACING["lg"], pady=(SPACING["sm"], SPACING["md"]), sticky="ew")
+        mapping_card.grid(row=2, column=0, columnspan=4, padx=SPACING["xl"], pady=(SPACING["sm"], SPACING["md"]), sticky="ew")
         mapping_card.grid_columnconfigure(1, weight=1)
         ctk.CTkLabel(
             mapping_card,
@@ -67,12 +67,18 @@ class SettingsTab(ctk.CTkFrame):
         ).grid(row=0, column=0, columnspan=2, sticky="w", padx=SPACING["md"], pady=(SPACING["sm"], SPACING["xs"]))
 
         for i, botte in enumerate(botti):
-            ctk.CTkLabel(mapping_card, text=f"{botte}:", width=90, anchor="e", font=font(size=FONT_SIZES["sm"])).grid(
+            ctk.CTkLabel(mapping_card, text=f"{botte}:", width=120, anchor="e", font=font(size=FONT_SIZES["sm"])).grid(
                 row=1 + i, column=0, padx=(SPACING["md"], SPACING["sm"]), pady=SPACING["xs"], sticky="e")
             selected_serial = self.master.settings.get("sensors_mapping", {}).get(botte, "")
             var = ctk.StringVar(value=selected_serial)
             cb = ctk.CTkComboBox(
-                mapping_card, values=serials, variable=var, width=240, font=font(size=FONT_SIZES["sm"]),
+                mapping_card,
+                values=serials,
+                variable=var,
+                width=280,
+                height=42,
+                font=font(size=FONT_SIZES["sm"]),
+                dropdown_font=font(size=FONT_SIZES["sm"]),
                 command=lambda _, b=botte, v=var: self.change_assoc(b, v)
             )
             cb.grid(row=1 + i, column=1, padx=(0, SPACING["md"]), pady=SPACING["xs"], sticky="w")
@@ -87,7 +93,7 @@ class SettingsTab(ctk.CTkFrame):
             border_width=1,
             border_color=COLORS["border"],
         )
-        serial_card.grid(row=3, column=0, columnspan=4, padx=SPACING["lg"], pady=(0, SPACING["md"]), sticky="ew")
+        serial_card.grid(row=3, column=0, columnspan=4, padx=SPACING["xl"], pady=(0, SPACING["md"]), sticky="ew")
         ctk.CTkLabel(serial_card, text="Serial disponibili", font=font(size=FONT_SIZES["sm"], weight="bold")).grid(
             row=0, column=0, pady=(SPACING["sm"], SPACING["xs"]), sticky="w", padx=SPACING["md"])
 
@@ -104,6 +110,7 @@ class SettingsTab(ctk.CTkFrame):
             fg_color=COLORS["accent"],
             hover_color=COLORS["accent_dark"],
             command=self.refresh,
+            height=42,
         )
         refresh_btn.grid(row=1 + len(serials), column=0, pady=(SPACING["sm"], SPACING["md"]), padx=SPACING["md"], sticky="w")
 
@@ -118,7 +125,7 @@ class SettingsTab(ctk.CTkFrame):
             border_width=1,
             border_color=COLORS["border"],
         )
-        card.grid(row=start_row, column=0, columnspan=4, padx=SPACING["lg"], pady=(0, SPACING["md"]), sticky="ew")
+        card.grid(row=start_row, column=0, columnspan=4, padx=SPACING["xl"], pady=(0, SPACING["md"]), sticky="ew")
         ctk.CTkLabel(
             card,
             text="Controllo automatico",
@@ -133,21 +140,21 @@ class SettingsTab(ctk.CTkFrame):
         ctk.CTkLabel(card, text="Aggiornamento (s):", font=font(size=FONT_SIZES["sm"])).grid(
             row=1, column=0, sticky="e", padx=(SPACING["md"], SPACING["sm"]), pady=SPACING["xs"]
         )
-        ctk.CTkEntry(card, textvariable=self.update_interval_var, width=80).grid(
+        ctk.CTkEntry(card, textvariable=self.update_interval_var, width=140).grid(
             row=1, column=1, sticky="w", pady=SPACING["xs"]
         )
 
         ctk.CTkLabel(card, text="Intervallo min switch (s):", font=font(size=FONT_SIZES["sm"])).grid(
             row=2, column=0, sticky="e", padx=(SPACING["md"], SPACING["sm"]), pady=SPACING["xs"]
         )
-        ctk.CTkEntry(card, textvariable=self.min_switch_interval_var, width=80).grid(
+        ctk.CTkEntry(card, textvariable=self.min_switch_interval_var, width=140).grid(
             row=2, column=1, sticky="w", pady=SPACING["xs"]
         )
 
         ctk.CTkLabel(card, text="Salvataggio config (s):", font=font(size=FONT_SIZES["sm"])).grid(
             row=3, column=0, sticky="e", padx=(SPACING["md"], SPACING["sm"]), pady=SPACING["xs"]
         )
-        ctk.CTkEntry(card, textvariable=self.save_interval_var, width=80).grid(
+        ctk.CTkEntry(card, textvariable=self.save_interval_var, width=140).grid(
             row=3, column=1, sticky="w", pady=SPACING["xs"]
         )
 
@@ -158,10 +165,11 @@ class SettingsTab(ctk.CTkFrame):
             fg_color=COLORS["accent"],
             hover_color=COLORS["accent_dark"],
             command=self.save_timing_settings,
+            height=42,
         )
         save_btn.grid(row=4, column=0, padx=SPACING["md"], pady=(SPACING["sm"], SPACING["sm"]), sticky="w")
 
-        self.status_label = ctk.CTkLabel(card, text="", font=font(size=FONT_SIZES["xs"]), text_color=COLORS["text_muted"])
+        self.status_label = ctk.CTkLabel(card, text="", font=font(size=FONT_SIZES["sm"]), text_color=COLORS["text_muted"])
         self.status_label.grid(row=4, column=1, padx=SPACING["sm"], sticky="w")
 
     def _build_diagnostics(self, start_row):
@@ -172,7 +180,7 @@ class SettingsTab(ctk.CTkFrame):
             border_width=1,
             border_color=COLORS["border"],
         )
-        card.grid(row=start_row, column=0, columnspan=4, padx=SPACING["lg"], pady=(0, SPACING["md"]), sticky="ew")
+        card.grid(row=start_row, column=0, columnspan=4, padx=SPACING["xl"], pady=(0, SPACING["md"]), sticky="ew")
         ctk.CTkLabel(
             card,
             text="Diagnostica e test installatore",
@@ -196,6 +204,7 @@ class SettingsTab(ctk.CTkFrame):
             fg_color=COLORS["accent"],
             hover_color=COLORS["accent_dark"],
             command=self.run_sensor_test,
+            height=42,
         )
         sensor_btn.grid(row=2, column=0, padx=SPACING["md"], pady=SPACING["xs"], sticky="w")
         self.test_buttons.append(sensor_btn)
@@ -207,7 +216,8 @@ class SettingsTab(ctk.CTkFrame):
             card,
             values=list(self.master.botti_data.keys()),
             variable=self.test_barrel_var,
-            width=140,
+            width=180,
+            height=42,
             font=font(size=FONT_SIZES["sm"]),
         )
         barrel_menu.grid(row=2, column=2, sticky="w", padx=SPACING["xs"], pady=SPACING["xs"])
@@ -219,6 +229,7 @@ class SettingsTab(ctk.CTkFrame):
             fg_color=COLORS["warning"],
             hover_color=COLORS["accent_dark"],
             command=lambda: self.run_valve_test("Aperta"),
+            height=42,
         )
         open_btn.grid(row=3, column=0, padx=SPACING["md"], pady=SPACING["xs"], sticky="w")
         self.test_buttons.append(open_btn)
@@ -230,6 +241,7 @@ class SettingsTab(ctk.CTkFrame):
             fg_color=COLORS["panel_soft"],
             hover_color=COLORS["accent_dark"],
             command=lambda: self.run_valve_test("Chiusa"),
+            height=42,
         )
         close_btn.grid(row=3, column=1, padx=SPACING["sm"], pady=SPACING["xs"], sticky="w")
         self.test_buttons.append(close_btn)
@@ -241,14 +253,15 @@ class SettingsTab(ctk.CTkFrame):
             fg_color=COLORS["accent"],
             hover_color=COLORS["accent_dark"],
             command=self.run_cycle_test,
+            height=42,
         )
         cycle_btn.grid(row=3, column=2, padx=SPACING["xs"], pady=SPACING["xs"], sticky="w")
         self.test_buttons.append(cycle_btn)
 
         self.test_output = ctk.CTkTextbox(
             card,
-            width=520,
-            height=110,
+            width=560,
+            height=140,
             fg_color=COLORS["panel_alt"],
             text_color=COLORS["text"],
         )

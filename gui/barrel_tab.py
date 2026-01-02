@@ -33,7 +33,7 @@ class BarrelTab(ctk.CTkFrame):
         super().__init__(master, corner_radius=16, fg_color=COLORS["panel"], **kwargs)
         self.app = app
         self.nome = nome
-        self.grid_columnconfigure(1, weight=1)
+        self.grid_columnconfigure(0, weight=1)
         self.show_legend = True
 
         # Font settings
@@ -44,7 +44,7 @@ class BarrelTab(ctk.CTkFrame):
 
         # HEADER: titolo + dot + temperatura + valvola + lock su una riga compatta
         header = ctk.CTkFrame(self, fg_color="transparent")
-        header.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(SPACING["sm"], SPACING["xs"]), padx=(SPACING["sm"], SPACING["sm"]))
+        header.grid(row=0, column=0, sticky="ew", pady=(SPACING["md"], SPACING["sm"]), padx=(SPACING["lg"], SPACING["lg"]))
         header.grid_columnconfigure(0, weight=1)
         title_block = ctk.CTkFrame(header, fg_color="transparent")
         title_block.grid(row=0, column=0, sticky="w")
@@ -53,7 +53,7 @@ class BarrelTab(ctk.CTkFrame):
         ctk.CTkLabel(
             title_block,
             text="Controllo singola botte",
-            font=font(size=FONT_SIZES["sm"]),
+            font=font(size=FONT_SIZES["md"]),
             text_color=COLORS["text_muted"],
         ).grid(row=1, column=0, sticky="w")
 
@@ -65,99 +65,183 @@ class BarrelTab(ctk.CTkFrame):
             border_color=COLORS["border"],
         )
         status_card.grid(row=0, column=1, padx=(SPACING["sm"], 0), sticky="e")
-        self.dot_lbl = ctk.CTkLabel(status_card, text="●", font=font(size=18), text_color=COLORS["success"])
-        self.dot_lbl.grid(row=0, column=0, padx=(SPACING["sm"], 4), pady=SPACING["sm"])
-        self.temp_lbl = ctk.CTkLabel(status_card, text="", font=font(size=FONT_SIZES["lg"], weight="bold"))
-        self.temp_lbl.grid(row=0, column=1, padx=SPACING["xs"], pady=SPACING["sm"])
+        self.dot_lbl = ctk.CTkLabel(status_card, text="●", font=font(size=24), text_color=COLORS["success"])
+        self.dot_lbl.grid(row=0, column=0, padx=(SPACING["sm"], 6), pady=SPACING["sm"])
+        self.temp_lbl = ctk.CTkLabel(status_card, text="", font=font(size=FONT_SIZES["xl"], weight="bold"))
+        self.temp_lbl.grid(row=0, column=1, padx=SPACING["sm"], pady=SPACING["sm"])
         self.valve_lbl = ctk.CTkLabel(status_card, text="", font=font_m)
-        self.valve_lbl.grid(row=0, column=2, padx=SPACING["xs"], pady=SPACING["sm"])
-        self.lock_lbl = ctk.CTkLabel(status_card, image=None, text="", width=18)
+        self.valve_lbl.grid(row=0, column=2, padx=SPACING["sm"], pady=SPACING["sm"])
+        self.lock_lbl = ctk.CTkLabel(status_card, image=None, text="", width=24)
         self.lock_lbl.grid(row=0, column=3, padx=(SPACING["xs"], SPACING["sm"]), pady=SPACING["sm"])
-        img_lock = Image.open("assets/lock.png").resize((16, 16))
+        img_lock = Image.open("assets/lock.png").resize((22, 22))
         self.lock_icon = ctk.CTkImage(light_image=img_lock, dark_image=img_lock)
 
-        # ComboBox affiancati
-        cb_frame = ctk.CTkFrame(self, fg_color="transparent")
-        cb_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(SPACING["xs"], SPACING["sm"]), padx=(SPACING["sm"], SPACING["sm"]))
-        cb_frame.grid_columnconfigure((0, 1, 2, 3, 4), weight=0)
-        ctk.CTkLabel(cb_frame, text="Modalità:", font=font_s).grid(row=0, column=0, sticky="e", padx=2)
-        self.mode_var = ctk.StringVar()
-        self.mode_menu = ctk.CTkComboBox(cb_frame, values=["Auto", "Aperta", "Chiusa"], variable=self.mode_var,
-                                         width=72, height=24, font=font_s, dropdown_font=font_s,
-                                         command=self.on_mode_selected)
-        self.mode_menu.grid(row=0, column=1, sticky="w", padx=2)
+        # Tab view per separare controlli e grafico
+        self.tabview = ctk.CTkTabview(
+            self,
+            fg_color=COLORS["panel"],
+            corner_radius=RADIUS["lg"],
+            segmented_button_fg_color=COLORS["panel_alt"],
+            segmented_button_selected_color=COLORS["accent"],
+            segmented_button_selected_hover_color=COLORS["accent_dark"],
+            segmented_button_unselected_color=COLORS["panel_soft"],
+            segmented_button_unselected_hover_color=COLORS["panel_alt"],
+        )
+        self.tabview.grid(row=1, column=0, sticky="nsew", padx=SPACING["lg"], pady=(0, SPACING["lg"]))
+        self.tabview.add("Controlli")
+        self.tabview.add("Grafico")
 
-        ctk.CTkLabel(cb_frame, text="Intervallo:", font=font_s).grid(row=0, column=2, sticky="e", padx=(10, 2))
+        controls_tab = self.tabview.tab("Controlli")
+        graph_tab = self.tabview.tab("Grafico")
+        controls_tab.grid_columnconfigure(0, weight=1)
+        graph_tab.grid_columnconfigure(0, weight=1)
+
+        # Controlli principali
+        control_card = ctk.CTkFrame(
+            controls_tab,
+            fg_color=COLORS["panel_alt"],
+            corner_radius=RADIUS["md"],
+            border_width=1,
+            border_color=COLORS["border"],
+        )
+        control_card.grid(row=0, column=0, sticky="ew", pady=(SPACING["md"], SPACING["sm"]), padx=SPACING["sm"])
+        control_card.grid_columnconfigure(1, weight=1)
+        ctk.CTkLabel(control_card, text="Modalità valvola", font=font_m).grid(
+            row=0, column=0, padx=SPACING["md"], pady=SPACING["sm"], sticky="w"
+        )
+        self.mode_var = ctk.StringVar()
+        self.mode_segmented = ctk.CTkSegmentedButton(
+            control_card,
+            values=["Auto", "Aperta", "Chiusa"],
+            variable=self.mode_var,
+            command=self.on_mode_selected,
+            font=font_s,
+            height=48,
+            corner_radius=RADIUS["sm"],
+        )
+        self.mode_segmented.grid(row=0, column=1, padx=SPACING["md"], pady=SPACING["sm"], sticky="e")
+
+        # Soglie e step
+        soglie_frame = ctk.CTkFrame(
+            controls_tab,
+            fg_color=COLORS["panel_alt"],
+            corner_radius=RADIUS["md"],
+            border_width=1,
+            border_color=COLORS["border"],
+        )
+        soglie_frame.grid(row=1, column=0, sticky="ew", padx=SPACING["sm"], pady=SPACING["sm"])
+        soglie_frame.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
+
+        ctk.CTkLabel(soglie_frame, text="Soglia minima", font=font_s, text_color=COLORS["info"]).grid(
+            row=0, column=0, padx=SPACING["sm"], pady=(SPACING["sm"], SPACING["xs"]), sticky="w"
+        )
+        ctk.CTkLabel(soglie_frame, text="Soglia massima", font=font_s, text_color=COLORS["danger"]).grid(
+            row=0, column=3, padx=SPACING["sm"], pady=(SPACING["sm"], SPACING["xs"]), sticky="w"
+        )
+
+        btn_minm = ctk.CTkButton(
+            soglie_frame,
+            text="−",
+            width=48,
+            height=48,
+            font=font_m,
+            command=lambda: self._button_feedback(self.modifica_soglia, "min_temp", -1),
+        )
+        btn_minm.grid(row=1, column=0, padx=SPACING["sm"], pady=SPACING["sm"], sticky="w")
+        self.min_lbl = ctk.CTkLabel(soglie_frame, text="", font=font_m, width=80)
+        self.min_lbl.grid(row=1, column=1, padx=SPACING["xs"], pady=SPACING["sm"], sticky="w")
+        btn_minp = ctk.CTkButton(
+            soglie_frame,
+            text="+",
+            width=48,
+            height=48,
+            font=font_m,
+            command=lambda: self._button_feedback(self.modifica_soglia, "min_temp", 1),
+        )
+        btn_minp.grid(row=1, column=2, padx=SPACING["sm"], pady=SPACING["sm"], sticky="w")
+
+        btn_maxm = ctk.CTkButton(
+            soglie_frame,
+            text="−",
+            width=48,
+            height=48,
+            font=font_m,
+            command=lambda: self._button_feedback(self.modifica_soglia, "max_temp", -1),
+        )
+        btn_maxm.grid(row=1, column=3, padx=SPACING["sm"], pady=SPACING["sm"], sticky="w")
+        self.max_lbl = ctk.CTkLabel(soglie_frame, text="", font=font_m, width=80)
+        self.max_lbl.grid(row=1, column=4, padx=SPACING["xs"], pady=SPACING["sm"], sticky="w")
+        btn_maxp = ctk.CTkButton(
+            soglie_frame,
+            text="+",
+            width=48,
+            height=48,
+            font=font_m,
+            command=lambda: self._button_feedback(self.modifica_soglia, "max_temp", 1),
+        )
+        btn_maxp.grid(row=1, column=5, padx=SPACING["sm"], pady=SPACING["sm"], sticky="w")
+
+        step_frame = ctk.CTkFrame(controls_tab, fg_color="transparent")
+        step_frame.grid(row=2, column=0, sticky="ew", padx=SPACING["sm"], pady=(0, SPACING["sm"]))
+        ctk.CTkLabel(step_frame, text="Passo regolazione", font=font_s).grid(
+            row=0, column=0, sticky="w", padx=SPACING["sm"]
+        )
+        self.step_var = ctk.StringVar(value=str(app.settings.get("step_temp", 0.1)))
+        steps = ["0.1", "0.2", "0.5", "1.0"]
+        self.step_menu = ctk.CTkComboBox(
+            step_frame,
+            values=steps,
+            variable=self.step_var,
+            width=120,
+            height=42,
+            font=font_s,
+            dropdown_font=font_s,
+            command=self.change_step,
+        )
+        self.step_menu.grid(row=0, column=1, padx=SPACING["sm"], sticky="w")
+
+        # Grafico con controlli dedicati
+        graph_controls = ctk.CTkFrame(graph_tab, fg_color="transparent")
+        graph_controls.grid(row=0, column=0, sticky="ew", padx=SPACING["sm"], pady=(SPACING["sm"], SPACING["xs"]))
+        ctk.CTkLabel(graph_controls, text="Intervallo grafico", font=font_s).grid(
+            row=0, column=0, padx=SPACING["sm"], sticky="w"
+        )
         self.range_var = ctk.StringVar(value="Ultime 2 ore")
-        self.range_menu = ctk.CTkComboBox(cb_frame, values=list(DELTA_MAP.keys()), variable=self.range_var,
-                                          width=90, height=24, font=font_s, dropdown_font=font_s,
-                                          command=lambda _: self.refresh())
-        self.range_menu.grid(row=0, column=3, sticky="w", padx=2)
+        self.range_menu = ctk.CTkComboBox(
+            graph_controls,
+            values=list(DELTA_MAP.keys()),
+            variable=self.range_var,
+            width=180,
+            height=42,
+            font=font_s,
+            dropdown_font=font_s,
+            command=lambda _: self.refresh(),
+        )
+        self.range_menu.grid(row=0, column=1, padx=SPACING["sm"], sticky="w")
 
         self.legend_btn = ctk.CTkButton(
-            cb_frame,
+            graph_controls,
             text="Legenda: ON",
-            width=74,
-            font=font_xs,
-            height=26,
+            width=160,
+            font=font_s,
+            height=42,
             command=self.toggle_legend,
             fg_color=COLORS["panel_alt"],
             hover_color=COLORS["panel_soft"],
             border_width=1,
             border_color=COLORS["border"],
         )
-        self.legend_btn.grid(row=0, column=4, padx=(8, 0), sticky="w")
+        self.legend_btn.grid(row=0, column=2, padx=SPACING["sm"], sticky="w")
 
-        # Soglie e step (in una riga compatta)
-        soglie_frame = ctk.CTkFrame(
-            self,
-            fg_color=COLORS["panel_alt"],
-            corner_radius=RADIUS["md"],
-            border_width=1,
-            border_color=COLORS["border"],
-        )
-        soglie_frame.grid(row=2, column=0, sticky="ew", padx=SPACING["sm"], pady=SPACING["sm"])
-        soglie_frame.grid_columnconfigure((0, 1, 2, 3, 4, 5, 6), weight=0)
-        ctk.CTkLabel(soglie_frame, text="Min:", font=font_xs, text_color=COLORS["info"]).grid(row=0, column=0)
-        btn_minm = ctk.CTkButton(soglie_frame, text="-", width=18, height=18, font=font_xs,
-                                 command=lambda: self._button_feedback(self.modifica_soglia, "min_temp", -1))
-        btn_minm.grid(row=0, column=1, padx=1)
-        self.min_lbl = ctk.CTkLabel(soglie_frame, text="", font=font_xs, width=22)
-        self.min_lbl.grid(row=0, column=2)
-        btn_minp = ctk.CTkButton(soglie_frame, text="+", width=18, height=18, font=font_xs,
-                                 command=lambda: self._button_feedback(self.modifica_soglia, "min_temp", 1))
-        btn_minp.grid(row=0, column=3, padx=1)
-        ctk.CTkLabel(soglie_frame, text="Max:", font=font_xs, text_color=COLORS["danger"]).grid(row=0, column=4, padx=(8, 0))
-        btn_maxm = ctk.CTkButton(soglie_frame, text="-", width=18, height=18, font=font_xs,
-                                 command=lambda: self._button_feedback(self.modifica_soglia, "max_temp", -1))
-        btn_maxm.grid(row=0, column=5, padx=1)
-        self.max_lbl = ctk.CTkLabel(soglie_frame, text="", font=font_xs, width=22)
-        self.max_lbl.grid(row=0, column=6)
-        btn_maxp = ctk.CTkButton(soglie_frame, text="+", width=18, height=18, font=font_xs,
-                                 command=lambda: self._button_feedback(self.modifica_soglia, "max_temp", 1))
-        btn_maxp.grid(row=0, column=7, padx=1)
-        ctk.CTkLabel(soglie_frame, text="Step:", font=font_xs).grid(row=0, column=8, padx=(8, 2))
-        self.step_var = ctk.StringVar(value=str(app.settings.get("step_temp", 0.1)))
-        steps = ["0.1", "0.2", "0.5", "1.0"]
-        self.step_menu = ctk.CTkComboBox(
-            soglie_frame, values=steps, variable=self.step_var,
-            width=44, height=20, font=font_xs,
-            dropdown_font=font_xs,
-            command=self.change_step
-        )
-        self.step_menu.grid(row=0, column=9, padx=2)
-
-        # Grafico (allargato)
         right = ctk.CTkFrame(
-            self,
+            graph_tab,
             fg_color=COLORS["panel_alt"],
             corner_radius=RADIUS["md"],
             border_width=1,
             border_color=COLORS["border"],
         )
-        right.grid(row=3, column=0, sticky="nsew", padx=SPACING["sm"], pady=SPACING["sm"])
-        # Nuove dimensioni: larghezza +40%, altezza +20%
-        self.fig, self.ax = plt.subplots(figsize=(6, 2.8))
+        right.grid(row=1, column=0, sticky="nsew", padx=SPACING["sm"], pady=SPACING["sm"])
+        self.fig, self.ax = plt.subplots(figsize=(7.2, 3.4))
         self.canvas = FigureCanvasTkAgg(self.fig, master=right)
         self.canvas.get_tk_widget().pack(fill="both", expand=True, padx=SPACING["xs"], pady=SPACING["xs"])
 
@@ -278,11 +362,11 @@ class BarrelTab(ctk.CTkFrame):
         self.ax.clear()
         self.fig.patch.set_facecolor(COLORS["panel"])
         self.ax.set_facecolor(COLORS["panel_alt"])
-        self.ax.tick_params(colors=COLORS["text_muted"], labelsize=7)
+        self.ax.tick_params(colors=COLORS["text_muted"], labelsize=9)
         if data:
             x = [t for t, v in data]
             y = [v for t, v in data]
-            self.ax.plot(x, y, marker='o', markersize=2, color=COLORS["accent"], label="Temperatura")
+            self.ax.plot(x, y, marker='o', markersize=3, color=COLORS["accent"], label="Temperatura")
             self.ax.axhline(b['min_temp'], color=COLORS["info"], linestyle='--', label='Min')
             self.ax.axhline(b['max_temp'], color=COLORS["danger"], linestyle='--', label='Max')
             opens = [t for t, v in vdata if v == "Aperta"]
@@ -294,12 +378,12 @@ class BarrelTab(ctk.CTkFrame):
             self.ax.xaxis.set_major_formatter(mdates.AutoDateFormatter(locator))
             self.fig.autofmt_xdate(rotation=20)
             if self.show_legend:
-                self.ax.legend(fontsize=7, loc='best')
+                self.ax.legend(fontsize=9, loc='best')
             else:
                 leg = self.ax.get_legend()
                 if leg:
                     leg.remove()
-            self.ax.set_ylabel("°C", fontsize=8, color=COLORS["text_muted"])
+            self.ax.set_ylabel("°C", fontsize=10, color=COLORS["text_muted"])
             self.ax.grid(True, linewidth=0.5, color=COLORS["panel_soft"])
             self.fig.tight_layout()
         self.canvas.draw()
