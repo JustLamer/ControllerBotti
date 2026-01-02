@@ -30,14 +30,21 @@ class SettingsTab(ctk.CTkFrame):
         for widget in self.winfo_children():
             widget.destroy()
 
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+        self.scroll_frame = ctk.CTkScrollableFrame(self, fg_color=COLORS["panel"])
+        self.scroll_frame.grid(row=0, column=0, sticky="nsew")
+        self.scroll_frame.grid_columnconfigure((0, 1, 2, 3), weight=1)
+        content = self.scroll_frame
+
         ctk.CTkLabel(
-            self,
+            content,
             text="Impostazioni",
             font=font(size=FONT_SIZES["xl"], weight="bold"),
             text_color=COLORS["text"],
         ).grid(row=0, column=0, columnspan=4, pady=(SPACING["lg"], SPACING["sm"]), padx=SPACING["xl"], sticky="w")
         ctk.CTkLabel(
-            self,
+            content,
             text="Associa sensori, regola i tempi di controllo e verifica l'hardware.",
             font=font(size=FONT_SIZES["md"]),
             text_color=COLORS["text_muted"],
@@ -53,7 +60,7 @@ class SettingsTab(ctk.CTkFrame):
             self.test_barrel_var.set(botti[0])
 
         mapping_card = ctk.CTkFrame(
-            self,
+            content,
             fg_color=COLORS["panel_alt"],
             corner_radius=RADIUS["md"],
             border_width=1,
@@ -99,7 +106,7 @@ class SettingsTab(ctk.CTkFrame):
 
         # Titolo e serial disponibili
         serial_card = ctk.CTkFrame(
-            self,
+            content,
             fg_color=COLORS["panel_alt"],
             corner_radius=RADIUS["md"],
             border_width=1,
@@ -126,14 +133,14 @@ class SettingsTab(ctk.CTkFrame):
         )
         refresh_btn.grid(row=1 + len(serials), column=0, pady=(SPACING["sm"], SPACING["md"]), padx=SPACING["md"], sticky="w")
 
-        self._build_fake_sensors(4)
-        self._build_control_settings(5)
-        self._build_diagnostics(6)
+        self._build_fake_sensors(content, 4)
+        self._build_control_settings(content, 5)
+        self._build_diagnostics(content, 6)
 
-    def _build_fake_sensors(self, start_row):
+    def _build_fake_sensors(self, parent, start_row):
         self.fake_sensor_entries = []
         card = ctk.CTkFrame(
-            self,
+            parent,
             fg_color=COLORS["panel_alt"],
             corner_radius=RADIUS["md"],
             border_width=1,
@@ -192,9 +199,9 @@ class SettingsTab(ctk.CTkFrame):
         )
         apply_btn.grid(row=len(fake_map) + 2, column=1, padx=SPACING["md"], pady=(SPACING["sm"], SPACING["sm"]), sticky="w")
 
-    def _build_control_settings(self, start_row):
+    def _build_control_settings(self, parent, start_row):
         card = ctk.CTkFrame(
-            self,
+            parent,
             fg_color=COLORS["panel_alt"],
             corner_radius=RADIUS["md"],
             border_width=1,
@@ -247,9 +254,9 @@ class SettingsTab(ctk.CTkFrame):
         self.status_label = ctk.CTkLabel(card, text="", font=font(size=FONT_SIZES["sm"]), text_color=COLORS["text_muted"])
         self.status_label.grid(row=4, column=1, padx=SPACING["sm"], sticky="w")
 
-    def _build_diagnostics(self, start_row):
+    def _build_diagnostics(self, parent, start_row):
         card = ctk.CTkFrame(
-            self,
+            parent,
             fg_color=COLORS["panel_alt"],
             corner_radius=RADIUS["md"],
             border_width=1,

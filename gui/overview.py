@@ -44,18 +44,35 @@ class OverviewFrame(ctk.CTkFrame):
                 corner_radius=RADIUS["lg"],
                 fg_color=COLORS["panel_alt"],
                 border_width=1,
-                border_color=COLORS["border"],
+                border_color=COLORS["accent"],
             )
             bg_frame.grid(row=row, column=col, padx=SPACING["sm"], pady=SPACING["sm"], sticky="n")
             bg_frame.grid_propagate(False)
+            bg_frame.bind("<Button-1>", lambda _, b=nome: self.app.switch_tab(b))
 
             # Immagine barrel
             border_lbl = ctk.CTkLabel(bg_frame, image=barrel_ctk_img, text="", fg_color="transparent")
             border_lbl.place(relx=0.5, rely=0.5, anchor="center")
+            border_lbl.bind("<Button-1>", lambda _, b=nome: self.app.switch_tab(b))
+
+            name_lbl = ctk.CTkLabel(
+                bg_frame,
+                text=nome,
+                font=font(size=FONT_SIZES["md"], weight="bold"),
+                text_color=COLORS["text"],
+                fg_color=COLORS["panel_soft"],
+                corner_radius=RADIUS["sm"],
+                height=30,
+                width=120,
+                anchor="center",
+            )
+            name_lbl.place(relx=0.5, rely=0.06, anchor="center")
+            name_lbl.bind("<Button-1>", lambda _, b=nome: self.app.switch_tab(b))
 
             # Dati sopra
             dot = ctk.CTkLabel(bg_frame, text="●", font=font(size=32), text_color=COLORS["text"], fg_color="transparent")
             dot.place(relx=0.5, rely=0.15, anchor="center")
+            dot.bind("<Button-1>", lambda _, b=nome: self.app.switch_tab(b))
 
             temp_lbl = ctk.CTkLabel(
                 bg_frame,
@@ -65,6 +82,7 @@ class OverviewFrame(ctk.CTkFrame):
                 fg_color="transparent"
             )
             temp_lbl.place(relx=0.5, rely=0.26, anchor="center")
+            temp_lbl.bind("<Button-1>", lambda _, b=nome: self.app.switch_tab(b))
 
             valve_lbl = ctk.CTkLabel(
                 bg_frame,
@@ -74,11 +92,13 @@ class OverviewFrame(ctk.CTkFrame):
                 fg_color="transparent"
             )
             valve_lbl.place(relx=0.5, rely=0.37, anchor="center")
+            valve_lbl.bind("<Button-1>", lambda _, b=nome: self.app.switch_tab(b))
 
             img_lock = Image.open("assets/lock.png").resize((24, 24))
             lock_icon = ctk.CTkImage(light_image=img_lock, dark_image=img_lock)
             lock_lbl = ctk.CTkLabel(bg_frame, image=None, text="", width=24, fg_color="transparent")
             lock_lbl.place(relx=0.5, rely=0.49, anchor="center")
+            lock_lbl.bind("<Button-1>", lambda _, b=nome: self.app.switch_tab(b))
 
             min_lbl = ctk.CTkLabel(
                 bg_frame,
@@ -93,6 +113,7 @@ class OverviewFrame(ctk.CTkFrame):
                 justify="center"
             )
             min_lbl.place(relx=0.18, rely=0.93, anchor="center")
+            min_lbl.bind("<Button-1>", lambda _, b=nome: self.app.switch_tab(b))
 
             max_lbl = ctk.CTkLabel(
                 bg_frame,
@@ -107,8 +128,10 @@ class OverviewFrame(ctk.CTkFrame):
                 justify="center"
             )
             max_lbl.place(relx=0.82, rely=0.93, anchor="center")
+            max_lbl.bind("<Button-1>", lambda _, b=nome: self.app.switch_tab(b))
 
             self.botte_widgets[nome] = {
+                "name": name_lbl,
                 "dot": dot,
                 "temp": temp_lbl,
                 "valve": valve_lbl,

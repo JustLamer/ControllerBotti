@@ -147,9 +147,13 @@ class BarrelTab(ctk.CTkFrame):
         btn_minm = ctk.CTkButton(
             soglie_frame,
             text="−",
-            width=48,
-            height=48,
-            font=font_m,
+            width=56,
+            height=56,
+            font=font(size=FONT_SIZES["xl"], weight="bold"),
+            fg_color=COLORS["panel_soft"],
+            hover_color=COLORS["panel_alt"],
+            text_color=COLORS["accent"],
+            border_width=0,
             command=lambda: self._button_feedback(self.modifica_soglia, "min_temp", -1),
         )
         btn_minm.grid(row=1, column=0, padx=SPACING["sm"], pady=SPACING["sm"], sticky="w")
@@ -158,9 +162,13 @@ class BarrelTab(ctk.CTkFrame):
         btn_minp = ctk.CTkButton(
             soglie_frame,
             text="+",
-            width=48,
-            height=48,
-            font=font_m,
+            width=56,
+            height=56,
+            font=font(size=FONT_SIZES["xl"], weight="bold"),
+            fg_color=COLORS["panel_soft"],
+            hover_color=COLORS["panel_alt"],
+            text_color=COLORS["accent"],
+            border_width=0,
             command=lambda: self._button_feedback(self.modifica_soglia, "min_temp", 1),
         )
         btn_minp.grid(row=1, column=2, padx=SPACING["sm"], pady=SPACING["sm"], sticky="w")
@@ -168,9 +176,13 @@ class BarrelTab(ctk.CTkFrame):
         btn_maxm = ctk.CTkButton(
             soglie_frame,
             text="−",
-            width=48,
-            height=48,
-            font=font_m,
+            width=56,
+            height=56,
+            font=font(size=FONT_SIZES["xl"], weight="bold"),
+            fg_color=COLORS["panel_soft"],
+            hover_color=COLORS["panel_alt"],
+            text_color=COLORS["accent"],
+            border_width=0,
             command=lambda: self._button_feedback(self.modifica_soglia, "max_temp", -1),
         )
         btn_maxm.grid(row=1, column=3, padx=SPACING["sm"], pady=SPACING["sm"], sticky="w")
@@ -179,9 +191,13 @@ class BarrelTab(ctk.CTkFrame):
         btn_maxp = ctk.CTkButton(
             soglie_frame,
             text="+",
-            width=48,
-            height=48,
-            font=font_m,
+            width=56,
+            height=56,
+            font=font(size=FONT_SIZES["xl"], weight="bold"),
+            fg_color=COLORS["panel_soft"],
+            hover_color=COLORS["panel_alt"],
+            text_color=COLORS["accent"],
+            border_width=0,
             command=lambda: self._button_feedback(self.modifica_soglia, "max_temp", 1),
         )
         btn_maxp.grid(row=1, column=5, padx=SPACING["sm"], pady=SPACING["sm"], sticky="w")
