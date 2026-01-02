@@ -91,7 +91,7 @@ class SettingsTab(ctk.CTkFrame):
                 hover_color=COLORS["accent_dark"],
                 height=42,
                 width=120,
-                command=lambda b=botte: self.change_assoc(b, self.combo_vars[b]),
+                command=lambda b=botte, w=cb: self.change_assoc(b, widget=w),
             )
             apply_btn.grid(row=1 + i, column=2, padx=(0, SPACING["md"]), pady=SPACING["xs"], sticky="w")
             self.combo_vars[botte] = var
@@ -346,8 +346,11 @@ class SettingsTab(ctk.CTkFrame):
     def refresh(self):
         self.build_ui()
 
-    def change_assoc(self, botte, var):
-        new_serial = var.get() if var.get() else None
+    def change_assoc(self, botte, var=None, widget=None):
+        if widget is not None:
+            new_serial = widget.get() or None
+        else:
+            new_serial = var.get() if var else None
         self.master.settings.setdefault('sensors_mapping', {})[botte] = new_serial
         save_config(self.master.botti_data, self.master.settings)
         self.on_mapping_change()
@@ -358,6 +361,9 @@ class SettingsTab(ctk.CTkFrame):
         now = datetime.datetime.now()
         self.master.botti_data[botte]["temperatura"] = temp
         self.master.botti_data[botte].setdefault("history", []).append((now, temp))
+        for page in getattr(self.master, "pages", {}).values():
+            if hasattr(page, "refresh"):
+                page.refresh()
 
     def save_timing_settings(self):
         update_interval = self._parse_int(self.update_interval_var.get(), fallback=5, min_value=2, max_value=60)
