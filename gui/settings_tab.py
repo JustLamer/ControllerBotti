@@ -1,5 +1,6 @@
 import customtkinter as ctk
 import threading
+import datetime
 from config import save_config
 from gui.theme import COLORS, FONT_SIZES, RADIUS, SPACING, font
 
@@ -21,6 +22,7 @@ class SettingsTab(ctk.CTkFrame):
         self.min_switch_interval_var = ctk.StringVar()
         self.save_interval_var = ctk.StringVar()
         self.test_barrel_var = ctk.StringVar(value="")
+        self.fake_sensor_entries = []
 
         self.build_ui()
 
@@ -114,8 +116,71 @@ class SettingsTab(ctk.CTkFrame):
         )
         refresh_btn.grid(row=1 + len(serials), column=0, pady=(SPACING["sm"], SPACING["md"]), padx=SPACING["md"], sticky="w")
 
-        self._build_control_settings(4)
-        self._build_diagnostics(5)
+        self._build_fake_sensors(4)
+        self._build_control_settings(5)
+        self._build_diagnostics(6)
+
+    def _build_fake_sensors(self, start_row):
+        self.fake_sensor_entries = []
+        card = ctk.CTkFrame(
+            self,
+            fg_color=COLORS["panel_alt"],
+            corner_radius=RADIUS["md"],
+            border_width=1,
+            border_color=COLORS["border"],
+        )
+        card.grid(row=start_row, column=0, columnspan=4, padx=SPACING["xl"], pady=(0, SPACING["md"]), sticky="ew")
+        card.grid_columnconfigure(2, weight=1)
+
+        ctk.CTkLabel(
+            card,
+            text="Sensori fake (test)",
+            font=font(size=FONT_SIZES["md"], weight="bold"),
+            text_color=COLORS["text"],
+        ).grid(row=0, column=0, columnspan=3, sticky="w", padx=SPACING["md"], pady=(SPACING["sm"], SPACING["xs"]))
+
+        ctk.CTkLabel(card, text="Nome", font=font(size=FONT_SIZES["sm"])).grid(
+            row=1, column=0, padx=SPACING["md"], pady=SPACING["xs"], sticky="w"
+        )
+        ctk.CTkLabel(card, text="Temperatura (°C)", font=font(size=FONT_SIZES["sm"])).grid(
+            row=1, column=1, padx=SPACING["md"], pady=SPACING["xs"], sticky="w"
+        )
+
+        fake_map = dict(self.master.settings.get("fake_sensor_temps", {}))
+        if not fake_map:
+            fake_map = {"Fake_Thermo_18": 18.0}
+            self.master.settings["fake_sensor_temps"] = fake_map
+
+        for row_idx, (name, temp) in enumerate(fake_map.items(), start=2):
+            name_var = ctk.StringVar(value=str(name))
+            temp_var = ctk.StringVar(value=str(temp))
+            name_entry = ctk.CTkEntry(card, textvariable=name_var, width=200)
+            name_entry.grid(row=row_idx, column=0, padx=SPACING["md"], pady=SPACING["xs"], sticky="w")
+            temp_entry = ctk.CTkEntry(card, textvariable=temp_var, width=140)
+            temp_entry.grid(row=row_idx, column=1, padx=SPACING["md"], pady=SPACING["xs"], sticky="w")
+            self.fake_sensor_entries.append((name_var, temp_var))
+
+        add_btn = ctk.CTkButton(
+            card,
+            text="Aggiungi sensore fake",
+            font=font(size=FONT_SIZES["sm"]),
+            fg_color=COLORS["panel_soft"],
+            hover_color=COLORS["accent_dark"],
+            command=self.add_fake_sensor_row,
+            height=42,
+        )
+        add_btn.grid(row=len(fake_map) + 2, column=0, padx=SPACING["md"], pady=(SPACING["sm"], SPACING["sm"]), sticky="w")
+
+        apply_btn = ctk.CTkButton(
+            card,
+            text="Applica sensori fake",
+            font=font(size=FONT_SIZES["sm"]),
+            fg_color=COLORS["accent"],
+            hover_color=COLORS["accent_dark"],
+            command=self.apply_fake_sensors,
+            height=42,
+        )
+        apply_btn.grid(row=len(fake_map) + 2, column=1, padx=SPACING["md"], pady=(SPACING["sm"], SPACING["sm"]), sticky="w")
 
     def _build_control_settings(self, start_row):
         card = ctk.CTkFrame(
@@ -276,6 +341,13 @@ class SettingsTab(ctk.CTkFrame):
         self.master.settings.setdefault('sensors_mapping', {})[botte] = new_serial
         save_config(self.master.botti_data, self.master.settings)
         self.on_mapping_change()
+        if new_serial:
+            temp = self.sensor_manager.read_temperature_by_serial(new_serial)
+        else:
+            temp = self.sensor_manager.read_temperature_by_serial("test")
+        now = datetime.datetime.now()
+        self.master.botti_data[botte]["temperatura"] = temp
+        self.master.botti_data[botte].setdefault("history", []).append((now, temp))
 
     def save_timing_settings(self):
         update_interval = self._parse_int(self.update_interval_var.get(), fallback=5, min_value=2, max_value=60)
@@ -309,6 +381,39 @@ class SettingsTab(ctk.CTkFrame):
             temp = self.sensor_manager.read_temperature_by_serial(serial)
             lines.append(f"{botte}: {serial} → {temp:.1f} °C")
         self._write_test_output("Test sensori:\n" + "\n".join(lines))
+
+    def add_fake_sensor_row(self):
+        fake_map = dict(self.master.settings.get("fake_sensor_temps", {}))
+        index = len(fake_map) + 1
+        new_key = f"Fake_Thermo_{18 + index}"
+        while new_key in fake_map:
+            index += 1
+            new_key = f"Fake_Thermo_{18 + index}"
+        fake_map[new_key] = 18.0
+        self.master.settings["fake_sensor_temps"] = fake_map
+        self.build_ui()
+
+    def apply_fake_sensors(self):
+        fake_map = {}
+        for name_var, temp_var in self.fake_sensor_entries:
+            name = name_var.get().strip()
+            if not name:
+                continue
+            try:
+                temp = float(temp_var.get())
+            except ValueError:
+                continue
+            fake_map[name] = temp
+        if not fake_map:
+            return
+        self.master.settings["fake_sensor_temps"] = fake_map
+        self.master.apply_fake_sensor_temps(fake_map)
+        save_config(self.master.botti_data, self.master.settings)
+        serials = self.sensor_manager.rescan_serials() or [""]
+        if "test" not in serials:
+            serials.insert(0, "test")
+        for botte, cb in self.combo_widgets.items():
+            cb.configure(values=serials)
 
     def run_valve_test(self, state):
         botte = self.test_barrel_var.get()

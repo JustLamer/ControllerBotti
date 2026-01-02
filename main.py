@@ -94,6 +94,9 @@ class ModernWineApp(ctk.CTk):
     def on_mapping_change(self):
         save_config(self.botti_data, self.settings)
 
+    def apply_fake_sensor_temps(self, temp_map):
+        set_fake_sensor_temps(temp_map)
+
     def on_test_mode_change(self, enabled):
         self.test_mode = enabled
 
