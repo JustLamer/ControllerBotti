@@ -9,7 +9,7 @@ from gui.overview import OverviewFrame
 from gui.barrel_tab import BarrelTab
 from config import load_config, save_config
 from styles import setup_styles
-from hardware.sensors import SensorManager
+from hardware.sensors import SensorManager, set_fake_sensor_temps
 from gui.settings_tab import SettingsTab
 from hardware.actuators import Actuator
 from utils.control import update_botti_state
@@ -33,6 +33,8 @@ class ModernWineApp(ctk.CTk):
         self.botti_data, self.settings = load_config()
         self.test_mode = False
         self.update_counter = 0
+
+        set_fake_sensor_temps(self.settings.get("fake_sensor_temps", {}))
 
         # Inizializza SensorManager prima della GUI
         user_mapping = self.settings.get("sensors_mapping", None)
