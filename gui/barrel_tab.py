@@ -86,9 +86,12 @@ class BarrelTab(ctk.CTkFrame):
             segmented_button_selected_hover_color=COLORS["accent_dark"],
             segmented_button_unselected_color=COLORS["panel_soft"],
             segmented_button_unselected_hover_color=COLORS["panel_alt"],
-            segmented_button_height=56,
-            segmented_button_font=font(size=FONT_SIZES["lg"], weight="bold"),
         )
+        if hasattr(self.tabview, "_segmented_button"):
+            self.tabview._segmented_button.configure(
+                height=56,
+                font=font(size=FONT_SIZES["lg"], weight="bold"),
+            )
         self.tabview.grid(row=1, column=0, sticky="nsew", padx=SPACING["lg"], pady=(0, SPACING["lg"]))
         self.tabview.add("Controlli")
         self.tabview.add("Grafico")
