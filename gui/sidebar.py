@@ -9,20 +9,6 @@ class Sidebar(ctk.CTkFrame):
         self.btns = {}
         self.selected_tab = None
 
-        header = ctk.CTkFrame(self, fg_color="transparent")
-        header.pack(pady=(SPACING["xl"], SPACING["sm"]), padx=SPACING["sm"], fill="x")
-        ctk.CTkLabel(
-            header,
-            text="Botti",
-            font=font(size=FONT_SIZES["xl"], weight="bold"),
-            text_color=COLORS["text"],
-        ).pack(anchor="w")
-        ctk.CTkLabel(
-            header,
-            text="Controllo",
-            font=font(size=FONT_SIZES["sm"]),
-            text_color=COLORS["text_muted"],
-        ).pack(anchor="w")
 
         for label, icon in self.tab_list:
             # "Panoramica": solo testo, senza icona

@@ -20,24 +20,8 @@ class OverviewFrame(ctk.CTkFrame):
         barrel_img_pil = Image.open(barrel_img_path).resize((IMG_W, IMG_H), Image.LANCZOS)
         barrel_ctk_img = ctk.CTkImage(light_image=barrel_img_pil, dark_image=barrel_img_pil, size=(IMG_W, IMG_H))
 
-        header = ctk.CTkFrame(self, fg_color="transparent")
-        header.grid(row=0, column=0, sticky="ew", padx=SPACING["xl"], pady=(SPACING["lg"], SPACING["sm"]))
-        header.grid_columnconfigure(0, weight=1)
-        ctk.CTkLabel(
-            header,
-            text="Panoramica",
-            font=font(size=FONT_SIZES["xl"], weight="bold"),
-            text_color=COLORS["text"],
-        ).grid(row=0, column=0, sticky="w")
-        ctk.CTkLabel(
-            header,
-            text="Stato rapido delle botti e soglie principali",
-            font=font(size=FONT_SIZES["md"]),
-            text_color=COLORS["text_muted"],
-        ).grid(row=1, column=0, sticky="w", pady=(2, 0))
-
         center_frame = ctk.CTkFrame(self, fg_color="transparent")
-        center_frame.grid(row=1, column=0, padx=SPACING["xl"], pady=SPACING["sm"], sticky="nsew")
+        center_frame.grid(row=0, column=0, padx=SPACING["xl"], pady=SPACING["sm"], sticky="nsew")
         center_frame.grid_rowconfigure(0, weight=1)
 
         self.botte_widgets = {}
