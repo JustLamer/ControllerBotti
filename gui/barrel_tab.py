@@ -323,6 +323,9 @@ class BarrelTab(ctk.CTkFrame):
         elif mode in ("Aperta", "Chiusa"):
             b["forced"] = mode
         save_config(self.app.botti_data, self.app.settings)
+        overview = getattr(self.app, "pages", {}).get("Panoramica")
+        if overview and hasattr(overview, "refresh"):
+            overview.refresh()
         if old_forced != b["forced"]:
             log_event("CambioModalità", self.nome, f"Da {old_forced} a {b['forced']}")
 
