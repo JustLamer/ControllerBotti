@@ -332,6 +332,9 @@ class BarrelTab(ctk.CTkFrame):
         old_val = b[tipo]
         b[tipo] = round(b[tipo] + delta * step, 1)
         self.refresh()
+        overview = getattr(self.app, "pages", {}).get("Panoramica")
+        if overview and hasattr(overview, "refresh"):
+            overview.refresh()
         if b[tipo] != old_val:
             log_event("CambioSoglia", self.nome, f"{tipo}: {old_val} -> {b[tipo]}")
 
