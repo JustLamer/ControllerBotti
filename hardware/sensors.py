@@ -1,6 +1,7 @@
 import os
 import sys
 import random
+import re
 
 USE_MOCK_SENSOR = (
     os.environ.get("USE_MOCK_SENSOR", "0") == "1" or
@@ -9,6 +10,34 @@ USE_MOCK_SENSOR = (
 
 if "--mock" in sys.argv:
     sys.argv.remove("--mock")  # optional, for clean CLI parsing later
+
+FAKE_SENSOR_TEMPS = {
+    "Fake_Thermo_18": 18.0,
+    "Fake_Thermo_27": 27.0,
+    "Fake_Thermo_32": 32.0,
+}
+DEFAULT_FAKE_TEMP = 18.0
+
+
+def set_fake_sensor_temps(temp_map):
+    if not isinstance(temp_map, dict):
+        return
+    FAKE_SENSOR_TEMPS.clear()
+    for key, value in temp_map.items():
+        try:
+            FAKE_SENSOR_TEMPS[str(key)] = float(value)
+        except (TypeError, ValueError):
+            continue
+
+
+def _parse_fake_temp(sensor_id):
+    match = re.search(r"(\d+(?:\.\d+)?)$", sensor_id or "")
+    if match:
+        try:
+            return float(match.group(1))
+        except ValueError:
+            return None
+    return None
 
 try:
     if not USE_MOCK_SENSOR:
@@ -26,11 +55,24 @@ except Exception as e:
         THERM_SENSOR_DS18B20 = "DS18B20"
         def __init__(self, sensor_type=THERM_SENSOR_DS18B20, sensor_id=None):
             self.id = sensor_id or f"28-{random.randint(100000, 999999)}"
+            self._fake_temp = FAKE_SENSOR_TEMPS.get(self.id)
+            if self._fake_temp is None:
+                parsed_temp = _parse_fake_temp(self.id)
+                if parsed_temp is not None:
+                    self._fake_temp = parsed_temp
+                else:
+                    self._fake_temp = DEFAULT_FAKE_TEMP
         def get_temperature(self):
-            return 18 + random.uniform(-1.5, 1.5)
+            return self._fake_temp
         @staticmethod
         def get_available_sensors():
-            return [W1ThermSensor(sensor_id=f"Fake_Thermo{i+1}") for i in range(3)]
+            if FAKE_SENSOR_TEMPS:
+                return [W1ThermSensor(sensor_id=sensor_id) for sensor_id in FAKE_SENSOR_TEMPS.keys()]
+            return [
+                W1ThermSensor(sensor_id="Fake_Thermo_18"),
+                W1ThermSensor(sensor_id="Fake_Thermo_27"),
+                W1ThermSensor(sensor_id="Fake_Thermo_32"),
+            ]
 
     class SensorNotReadyError(Exception):
         pass
@@ -64,7 +106,9 @@ class Sensor:
                 print(f"[ERROR] Sonda {self.name} non pronta, uso mock.")
             except Exception as e:
                 print(f"[ERROR] Errore lettura {self.name}: {e}")
-        return round(18 + random.uniform(-1.5, 1.5), 1)
+        if self.sensor_obj:
+            return round(self.sensor_obj.get_temperature(), 1)
+        return round(DEFAULT_FAKE_TEMP, 1)
 
     def __repr__(self):
         return f"<Sensor name={self.name}, serial={self.serial}>"
@@ -107,14 +151,14 @@ class SensorManager:
 
     def read_temperature_by_serial(self, serial):
         if serial == "test" or not serial:
-            return round(18 + random.uniform(-1.5, 1.5), 1)
+            return round(DEFAULT_FAKE_TEMP, 1)
 
         try:
             sensor = W1ThermSensor(sensor_id=serial)
             return round(sensor.get_temperature(), 1)
         except Exception as e:
             #print(f"[ERROR] Errore lettura serial {serial}: {e}, uso mock.")
-            return round(18 + random.uniform(-1.5, 1.5), 1)
+            return round(DEFAULT_FAKE_TEMP, 1)
 
 
 if __name__ == "__main__":

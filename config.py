@@ -14,6 +14,11 @@ default_settings = {
     "min_switch_interval_s": 60,
     "save_interval_s": 30,
     "sensors_mapping": {},
+    "fake_sensor_temps": {
+        "Fake_Thermo_18": 18.0,
+        "Fake_Thermo_27": 27.0,
+        "Fake_Thermo_32": 32.0,
+    },
 }
 
 CONFIG_PATH = "data/botti_config.json"

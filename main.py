@@ -9,7 +9,7 @@ from gui.overview import OverviewFrame
 from gui.barrel_tab import BarrelTab
 from config import load_config, save_config
 from styles import setup_styles
-from hardware.sensors import SensorManager
+from hardware.sensors import SensorManager, set_fake_sensor_temps
 from gui.settings_tab import SettingsTab
 from hardware.actuators import Actuator
 from utils.control import update_botti_state
@@ -33,6 +33,8 @@ class ModernWineApp(ctk.CTk):
         self.botti_data, self.settings = load_config()
         self.test_mode = False
         self.update_counter = 0
+
+        set_fake_sensor_temps(self.settings.get("fake_sensor_temps", {}))
 
         # Inizializza SensorManager prima della GUI
         user_mapping = self.settings.get("sensors_mapping", None)
@@ -92,13 +94,16 @@ class ModernWineApp(ctk.CTk):
     def on_mapping_change(self):
         save_config(self.botti_data, self.settings)
 
+    def apply_fake_sensor_temps(self, temp_map):
+        set_fake_sensor_temps(temp_map)
+
     def on_test_mode_change(self, enabled):
         self.test_mode = enabled
 
     def switch_tab(self, tab_name):
         if self.current_tab:
             self.pages[self.current_tab].grid_forget()
-        self.pages[tab_name].grid(row=0, column=1, sticky="nsew", padx=28, pady=28)
+        self.pages[tab_name].grid(row=0, column=1, sticky="nsew", padx=18, pady=18)
         self.current_tab = tab_name
         self.sidebar.select(tab_name)
         if tab_name == "Impostazioni":
