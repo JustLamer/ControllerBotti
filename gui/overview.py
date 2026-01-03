@@ -1,6 +1,6 @@
 import customtkinter as ctk
 from PIL import Image
-from gui.theme import COLORS, FONT_SIZES, RADIUS, SPACING, font
+from gui.theme import COLORS, FONT_SIZES, RADIUS, SPACING, font, tint_icon
 
 
 class OverviewFrame(ctk.CTkFrame):
@@ -17,7 +17,7 @@ class OverviewFrame(ctk.CTkFrame):
         IMG_W = 150
         IMG_H = 200
 
-        barrel_img_pil = Image.open(barrel_img_path).resize((IMG_W, IMG_H), Image.LANCZOS)
+        barrel_img_pil = tint_icon(barrel_img_path, (IMG_W, IMG_H), COLORS["accent"])
         barrel_ctk_img = ctk.CTkImage(light_image=barrel_img_pil, dark_image=barrel_img_pil, size=(IMG_W, IMG_H))
 
         center_frame = ctk.CTkFrame(self, fg_color="transparent")

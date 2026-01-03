@@ -1,4 +1,5 @@
 import customtkinter as ctk
+from PIL import Image, ImageColor
 
 
 COLORS = {
@@ -43,3 +44,13 @@ FONT_SIZES = {
 
 def font(size=14, weight="normal"):
     return ctk.CTkFont(size=size, weight=weight)
+
+
+def tint_icon(path, size, color):
+    image = Image.open(path).convert("RGBA")
+    if size:
+        image = image.resize(size, Image.LANCZOS)
+    tint = ImageColor.getrgb(color)
+    colored = Image.new("RGBA", image.size, tint + (255,))
+    colored.putalpha(image.split()[-1])
+    return colored

@@ -1,6 +1,9 @@
 import customtkinter as ctk
 import threading
 import datetime
+import contextlib
+import io
+import traceback
 from config import save_config
 from gui.theme import COLORS, FONT_SIZES, RADIUS, SPACING, font
 
@@ -16,6 +19,7 @@ class SettingsTab(ctk.CTkFrame):
         self.serial_labels = []
         self.test_mode_var = ctk.BooleanVar(value=False)
         self.test_output = None
+        self.valve_logic_output = None
         self.test_buttons = []
         self.status_label = None
         self.update_interval_var = ctk.StringVar()
@@ -29,6 +33,9 @@ class SettingsTab(ctk.CTkFrame):
     def build_ui(self):
         for widget in self.winfo_children():
             widget.destroy()
+        self.test_buttons = []
+        self.test_output = None
+        self.valve_logic_output = None
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
@@ -59,14 +66,38 @@ class SettingsTab(ctk.CTkFrame):
         if botti:
             self.test_barrel_var.set(botti[0])
 
-        mapping_card = ctk.CTkFrame(
+        tabview = ctk.CTkTabview(
             content,
+            fg_color=COLORS["panel"],
+            segmented_button_fg_color=COLORS["panel_alt"],
+            segmented_button_selected_color=COLORS["accent"],
+            segmented_button_selected_hover_color=COLORS["accent_dark"],
+            segmented_button_unselected_color=COLORS["panel_alt"],
+            segmented_button_unselected_hover_color=COLORS["panel_soft"],
+        )
+        tabview.grid(row=2, column=0, columnspan=4, padx=SPACING["xl"], pady=(SPACING["sm"], SPACING["md"]), sticky="nsew")
+
+        general_tab = tabview.add("Generale")
+        test_tab = tabview.add("Test")
+        general_tab.grid_columnconfigure((0, 1, 2, 3), weight=1)
+        test_tab.grid_columnconfigure((0, 1, 2, 3), weight=1)
+
+        self._build_mapping_card(general_tab, 0, botti, serials)
+        self._build_serials_card(general_tab, 1, serials)
+        self._build_fake_sensors(general_tab, 2)
+        self._build_control_settings(general_tab, 3)
+        self._build_diagnostics(test_tab, 0)
+        self._build_valve_logic_test(test_tab, 1)
+
+    def _build_mapping_card(self, parent, start_row, botti, serials):
+        mapping_card = ctk.CTkFrame(
+            parent,
             fg_color=COLORS["panel_alt"],
             corner_radius=RADIUS["md"],
             border_width=1,
             border_color=COLORS["border"],
         )
-        mapping_card.grid(row=2, column=0, columnspan=4, padx=SPACING["xl"], pady=(SPACING["sm"], SPACING["md"]), sticky="ew")
+        mapping_card.grid(row=start_row, column=0, columnspan=4, padx=SPACING["xl"], pady=(SPACING["sm"], SPACING["md"]), sticky="ew")
         mapping_card.grid_columnconfigure(1, weight=1)
         ctk.CTkLabel(
             mapping_card,
@@ -104,18 +135,19 @@ class SettingsTab(ctk.CTkFrame):
             self.combo_vars[botte] = var
             self.combo_widgets[botte] = cb
 
-        # Titolo e serial disponibili
+    def _build_serials_card(self, parent, start_row, serials):
         serial_card = ctk.CTkFrame(
-            content,
+            parent,
             fg_color=COLORS["panel_alt"],
             corner_radius=RADIUS["md"],
             border_width=1,
             border_color=COLORS["border"],
         )
-        serial_card.grid(row=3, column=0, columnspan=4, padx=SPACING["xl"], pady=(0, SPACING["md"]), sticky="ew")
+        serial_card.grid(row=start_row, column=0, columnspan=4, padx=SPACING["xl"], pady=(0, SPACING["md"]), sticky="ew")
         ctk.CTkLabel(serial_card, text="Serial disponibili", font=font(size=FONT_SIZES["sm"], weight="bold")).grid(
             row=0, column=0, pady=(SPACING["sm"], SPACING["xs"]), sticky="w", padx=SPACING["md"])
 
+        self.serial_labels = []
         for j, sid in enumerate(serials):
             if sid:
                 label = ctk.CTkLabel(serial_card, text=sid, font=font(size=FONT_SIZES["xs"]), text_color=COLORS["text_muted"])
@@ -132,10 +164,6 @@ class SettingsTab(ctk.CTkFrame):
             height=42,
         )
         refresh_btn.grid(row=1 + len(serials), column=0, pady=(SPACING["sm"], SPACING["md"]), padx=SPACING["md"], sticky="w")
-
-        self._build_fake_sensors(content, 4)
-        self._build_control_settings(content, 5)
-        self._build_diagnostics(content, 6)
 
     def _build_fake_sensors(self, parent, start_row):
         self.fake_sensor_entries = []
@@ -350,6 +378,51 @@ class SettingsTab(ctk.CTkFrame):
         self.test_output.grid(row=4, column=0, columnspan=3, padx=SPACING["md"], pady=(SPACING["sm"], SPACING["md"]), sticky="ew")
         self._set_test_controls_state(False)
 
+    def _build_valve_logic_test(self, parent, start_row):
+        card = ctk.CTkFrame(
+            parent,
+            fg_color=COLORS["panel_alt"],
+            corner_radius=RADIUS["md"],
+            border_width=1,
+            border_color=COLORS["border"],
+        )
+        card.grid(row=start_row, column=0, columnspan=4, padx=SPACING["xl"], pady=(0, SPACING["md"]), sticky="ew")
+        card.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            card,
+            text="Test logica valvola",
+            font=font(size=FONT_SIZES["md"], weight="bold"),
+            text_color=COLORS["text"],
+        ).grid(row=0, column=0, columnspan=2, sticky="w", padx=SPACING["md"], pady=(SPACING["sm"], SPACING["xs"]))
+
+        ctk.CTkLabel(
+            card,
+            text="Esegue debug/test_valve_logic.py e mostra l'output completo.",
+            font=font(size=FONT_SIZES["sm"]),
+            text_color=COLORS["text_muted"],
+        ).grid(row=1, column=0, columnspan=2, sticky="w", padx=SPACING["md"])
+
+        run_btn = ctk.CTkButton(
+            card,
+            text="Esegui test logica",
+            font=font(size=FONT_SIZES["sm"]),
+            fg_color=COLORS["accent"],
+            hover_color=COLORS["accent_dark"],
+            command=self.run_valve_logic_test,
+            height=42,
+        )
+        run_btn.grid(row=2, column=0, padx=SPACING["md"], pady=SPACING["xs"], sticky="w")
+
+        self.valve_logic_output = ctk.CTkTextbox(
+            card,
+            width=560,
+            height=160,
+            fg_color=COLORS["panel_alt"],
+            text_color=COLORS["text"],
+        )
+        self.valve_logic_output.grid(row=3, column=0, columnspan=2, padx=SPACING["md"], pady=(SPACING["sm"], SPACING["md"]), sticky="ew")
+
     def refresh(self):
         self.build_ui()
 
@@ -404,6 +477,36 @@ class SettingsTab(ctk.CTkFrame):
             temp = self.sensor_manager.read_temperature_by_serial(serial)
             lines.append(f"{botte}: {serial} → {temp:.1f} °C")
         self._write_test_output("Test sensori:\n" + "\n".join(lines))
+
+    def run_valve_logic_test(self):
+        if not self.valve_logic_output:
+            return
+        self._write_logic_output("Esecuzione test logica valvola...")
+        thread = threading.Thread(target=self._execute_valve_logic_test)
+        thread.daemon = True
+        thread.start()
+
+    def _execute_valve_logic_test(self):
+        buffer = io.StringIO()
+        try:
+            from debug import test_valve_logic
+        except Exception as exc:
+            buffer.write(f"Errore import debug/test_valve_logic.py: {exc}\n")
+            self._write_logic_output(buffer.getvalue().strip())
+            return
+
+        with contextlib.redirect_stdout(buffer), contextlib.redirect_stderr(buffer):
+            print("Avvio test logica valvola...")
+            try:
+                test_valve_logic.run_tests()
+                print("All valve logic tests passed.")
+            except AssertionError as exc:
+                print(f"Test fallito: {exc}")
+            except Exception:
+                traceback.print_exc()
+
+        output = buffer.getvalue().strip() or "Test completato."
+        self._write_logic_output(output)
 
     def add_fake_sensor_row(self):
         fake_map = dict(self.master.settings.get("fake_sensor_temps", {}))
@@ -479,6 +582,16 @@ class SettingsTab(ctk.CTkFrame):
         def update_text():
             self.test_output.delete("1.0", "end")
             self.test_output.insert("end", message)
+
+        self.after(0, update_text)
+
+    def _write_logic_output(self, message):
+        if not self.valve_logic_output:
+            return
+
+        def update_text():
+            self.valve_logic_output.delete("1.0", "end")
+            self.valve_logic_output.insert("end", message)
 
         self.after(0, update_text)
 

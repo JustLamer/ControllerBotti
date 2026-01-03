@@ -13,7 +13,7 @@ from hardware.sensors import SensorManager, set_fake_sensor_temps
 from gui.settings_tab import SettingsTab
 from hardware.actuators import Actuator
 from utils.control import update_botti_state
-from gui.theme import COLORS
+from gui.theme import COLORS, tint_icon
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
@@ -60,9 +60,11 @@ class ModernWineApp(ctk.CTk):
 
         # --- Icone ---
         gear_icon_path = os.path.join("assets", "gear.png")
-        self.gear_img = ctk.CTkImage(light_image=Image.open(gear_icon_path), dark_image=Image.open(gear_icon_path), size=(44, 44))
+        gear_icon = tint_icon(gear_icon_path, (44, 44), COLORS["accent"])
+        self.gear_img = ctk.CTkImage(light_image=gear_icon, dark_image=gear_icon, size=(44, 44))
         barrel_icon_path = os.path.join("assets", "barrel.png")
-        self.barrel_img = ctk.CTkImage(light_image=Image.open(barrel_icon_path), dark_image=Image.open(barrel_icon_path), size=(48, 48))
+        barrel_icon = tint_icon(barrel_icon_path, (48, 48), COLORS["accent"])
+        self.barrel_img = ctk.CTkImage(light_image=barrel_icon, dark_image=barrel_icon, size=(48, 48))
 
         # --- Sidebar ---
         tab_list = [("Panoramica", self.barrel_img)] + [(nome, self.barrel_img) for nome in self.botti_data] + [("Impostazioni", self.gear_img)]
