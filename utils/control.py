@@ -43,10 +43,11 @@ def update_botti_state(botti_data, settings, sensor_manager, actuators, test_mod
 
         last_change = b.get("last_valve_change")
         if desired_valve != current_valve:
-            if isinstance(last_change, datetime.datetime):
-                elapsed = (now - last_change).total_seconds()
-                if elapsed < min_switch_interval:
-                    desired_valve = current_valve
+            if forced not in ("Aperta", "Chiusa"):
+                if isinstance(last_change, datetime.datetime):
+                    elapsed = (now - last_change).total_seconds()
+                    if elapsed < min_switch_interval:
+                        desired_valve = current_valve
             if desired_valve != current_valve:
                 b["valvola"] = desired_valve
                 b["last_valve_change"] = now

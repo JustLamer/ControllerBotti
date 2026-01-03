@@ -322,10 +322,14 @@ class BarrelTab(ctk.CTkFrame):
             b["forced"] = None
         elif mode in ("Aperta", "Chiusa"):
             b["forced"] = mode
+            b["valvola"] = mode
+            b["last_valve_change"] = datetime.datetime.now()
+            b.setdefault("valve_history", []).append((b["last_valve_change"], b["valvola"]))
         save_config(self.app.botti_data, self.app.settings)
         overview = getattr(self.app, "pages", {}).get("Panoramica")
         if overview and hasattr(overview, "refresh"):
             overview.refresh()
+        self.refresh()
         if old_forced != b["forced"]:
             log_event("CambioModalità", self.nome, f"Da {old_forced} a {b['forced']}")
 
